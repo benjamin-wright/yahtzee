@@ -9,6 +9,7 @@ export const initialState: GameState = {
   scores: [],
   currentPlayer: 0,
   dice: [],
+  selectedCategory: null,
 }
 
 function allCategoriesScored(score: PlayerScore): boolean {
@@ -28,10 +29,11 @@ export function reducer(state: GameState, action: Action): GameState {
         scores: action.players.map(() => ({})),
         currentPlayer: -1,
         dice: [],
+        selectedCategory: null,
       }
 
     case 'ADD_DIE':
-      if (state.phase !== 'rolling') return state
+      if (state.phase !== 'rolling' || state.dice.length >= 5) return state
       return { ...state, dice: [...state.dice, action.value] }
 
     case 'REMOVE_DIE':
@@ -42,26 +44,33 @@ export function reducer(state: GameState, action: Action): GameState {
       }
 
     case 'CONFIRM_DICE':
-      if (state.phase !== 'rolling' || state.dice.length === 0) return state
-      return { ...state, phase: 'selecting' }
+      if (state.phase !== 'rolling' || state.dice.length !== 5) return state
+      return { ...state, phase: 'selecting', selectedCategory: null }
 
-    case 'SCORE_CATEGORY': {
+    case 'SCORE_CATEGORY':
       if (state.phase !== 'selecting') return state
-      const newScores = state.scores.map((s, i) =>
-        i === state.currentPlayer
-          ? { ...s, [action.category]: scoreCategory(action.category, state.dice) }
-          : s
-      )
+      if (state.scores[state.currentPlayer]?.[action.category] !== undefined) return state
+      return { ...state, selectedCategory: action.category }
+
+    case 'END_TURN': {
+      if (state.phase !== 'selecting' || !state.selectedCategory) return state
+      const newScores = state.scores.map((s, i) => {
+        if (i !== state.currentPlayer) return s
+        return {
+          ...s,
+          [state.selectedCategory]: scoreCategory(state.selectedCategory, state.dice),
+        }
+      })
       if (isGameOver(newScores)) {
-        return { ...state, phase: 'gameover', scores: newScores, dice: [] }
+        return { ...state, phase: 'gameover', scores: newScores, dice: [], selectedCategory: null }
       }
-      return { ...state, phase: 'scoring', scores: newScores, dice: [] }
+      return { ...state, phase: 'scoring', scores: newScores, dice: [], selectedCategory: null }
     }
 
     case 'NEXT_TURN': {
       if (state.phase !== 'scoring') return state
       const next = (state.currentPlayer + 1) % state.players.length
-      return { ...state, phase: 'rolling', currentPlayer: next, dice: [] }
+      return { ...state, phase: 'rolling', currentPlayer: next, dice: [], selectedCategory: null }
     }
 
     case 'RESET_GAME':
