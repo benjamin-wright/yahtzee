@@ -23,10 +23,10 @@ export function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'START_GAME':
       return {
-        phase: 'rolling',
+        phase: 'scoring',
         players: action.players,
         scores: action.players.map(() => ({})),
-        currentPlayer: 0,
+        currentPlayer: -1,
         dice: [],
       }
 
