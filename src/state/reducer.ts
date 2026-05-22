@@ -54,11 +54,12 @@ export function reducer(state: GameState, action: Action): GameState {
 
     case 'END_TURN': {
       if (state.phase !== 'selecting' || !state.selectedCategory) return state
+      const selectedCategory = state.selectedCategory
       const newScores = state.scores.map((s, i) => {
         if (i !== state.currentPlayer) return s
         return {
           ...s,
-          [state.selectedCategory]: scoreCategory(state.selectedCategory, state.dice),
+          [selectedCategory]: scoreCategory(selectedCategory, state.dice),
         }
       })
       if (isGameOver(newScores)) {
