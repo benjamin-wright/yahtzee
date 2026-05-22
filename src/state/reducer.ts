@@ -64,6 +64,9 @@ export function reducer(state: GameState, action: Action): GameState {
       return { ...state, phase: 'rolling', currentPlayer: next, dice: [] }
     }
 
+    case 'RESET_GAME':
+      return initialState
+
     default:
       return state
   }
