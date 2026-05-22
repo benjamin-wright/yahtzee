@@ -223,3 +223,137 @@ input[type='number']:focus {
   padding: 12px;
   font-size: 1.05rem;
 }
+
+/* ─── Scorecard view ────────────────────────────────────────── */
+.view-scorecard {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.scorecard-nav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.scorecard-nav h2 {
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.scorecard-exit {
+  font-size: 0.875rem;
+  padding: 0 12px;
+  height: 36px;
+  width: auto;
+}
+
+.scorecard-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.scorecard-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.scorecard-table thead th.col-label {
+  text-align: left;
+  min-width: 130px;
+  z-index: 3;
+}
+
+.scorecard-table thead th.col-player {
+  min-width: 72px;
+}
+
+.scorecard-table tbody tr:nth-child(even) {
+  background: var(--surface-raised);
+}
+
+.scorecard-table tbody tr:hover {
+  background: var(--accent-bg);
+}
+
+.scorecard-table .section-header td {
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.scorecard-table .section-header:hover {
+  background: var(--bg);
+}
+
+.scorecard-table .row-label {
+  padding: 9px 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.scorecard-table .score-cell {
+  padding: 9px 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 56px;
+}
+
+.scorecard-table .subtotal-row td {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.scorecard-table .total-row td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  color: var(--text-strong);
+}
+
+.scorecard-table .grand-total-row td {
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.scorecard-footer {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.scorecard-footer .btn-primary {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+}
+

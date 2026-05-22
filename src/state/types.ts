@@ -17,3 +17,4 @@ export type Action =
   | { type: 'CONFIRM_DICE' }
   | { type: 'SCORE_CATEGORY'; category: Category }
   | { type: 'NEXT_TURN' }
+  | { type: 'RESET_GAME' }
