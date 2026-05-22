@@ -1,0 +1,225 @@
+/* ─── Reset ────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+p {
+  margin: 0;
+}
+
+/* ─── Design tokens ─────────────────────────────────────────── */
+:root {
+  --accent: #c0392b;
+  --accent-bg: rgba(192, 57, 43, 0.1);
+  --accent-border: rgba(192, 57, 43, 0.35);
+
+  --text: #4a4555;
+  --text-strong: #0e0c14;
+  --text-muted: #908c9e;
+
+  --bg: #f6f4f0;
+  --surface: #ffffff;
+  --surface-raised: #f0ece6;
+  --border: #dddad4;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --radius: 8px;
+  --radius-lg: 14px;
+
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  color-scheme: light dark;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #e05252;
+    --accent-bg: rgba(224, 82, 82, 0.12);
+    --accent-border: rgba(224, 82, 82, 0.4);
+
+    --text: #b0acbe;
+    --text-strong: #f0eef5;
+    --text-muted: #6b6778;
+
+    --bg: #18171f;
+    --surface: #22212c;
+    --surface-raised: #2c2b38;
+    --border: #38364a;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* ─── App shell ─────────────────────────────────────────────── */
+#app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────── */
+button {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 24px;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}
+
+.btn-secondary:not(:disabled):hover {
+  background: var(--surface-raised);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--text-strong);
+  border-color: var(--text-muted);
+}
+
+/* ─── Inputs ────────────────────────────────────────────────── */
+input[type='text'],
+input[type='number'] {
+  font-family: var(--sans);
+  font-size: 1rem;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-strong);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input[type='text']:focus,
+input[type='number']:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+/* ─── Setup view ────────────────────────────────────────────── */
+.view-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 16px 40px;
+  flex: 1;
+}
+
+.view-setup h1 {
+  font-size: clamp(2.8rem, 10vw, 4rem);
+  letter-spacing: -0.05em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.view-setup .tagline {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 44px;
+}
+
+.setup-form {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setup-form fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 8px 16px 16px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+
+.setup-form legend {
+  padding: 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.player-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.player-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup-form .btn-secondary {
+  align-self: flex-start;
+  font-size: 0.9rem;
+  padding: 6px 14px;
+}
+
+.setup-form .btn-primary {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.05rem;
+}
