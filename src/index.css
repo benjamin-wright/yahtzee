@@ -5,8 +5,18 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
 }
 
 h1, h2, h3 {
@@ -68,7 +78,7 @@ p {
 
 /* ─── App shell ─────────────────────────────────────────────── */
 #app {
-  min-height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   padding-top: env(safe-area-inset-top);
@@ -161,6 +171,8 @@ input[type='number']:focus {
   align-items: center;
   padding: 56px 16px 40px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .view-setup h1 {
@@ -271,6 +283,17 @@ input[type='number']:focus {
 .view-turn-entry h2 {
   font-size: 1.4rem;
   letter-spacing: -0.02em;
+}
+
+.turn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.turn-header .mode-toggle {
+  flex-shrink: 0;
 }
 
 .turn-subtitle {
@@ -386,7 +409,6 @@ input[type='number']:focus {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  align-self: flex-start;
 }
 
 .mode-toggle-btn {
@@ -439,6 +461,7 @@ input[type='number']:focus {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
 }
 
 .scorecard-nav {
