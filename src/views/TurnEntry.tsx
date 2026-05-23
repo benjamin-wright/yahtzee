@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState, Action, RollMode } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
@@ -54,6 +54,14 @@ function randomDie(rng: () => number): Die {
   return (Math.floor(rng() * 6) + 1) as Die
 }
 
+function DiceFaceQuestion() {
+  return (
+    <svg viewBox="0 0 60 60" className="die-face" aria-hidden="true">
+      <text x="30" y="30" textAnchor="middle" dominantBaseline="central" fontSize="32" fontWeight="bold" fill="currentColor">?</text>
+    </svg>
+  )
+}
+
 function DiceFace({ value }: { value: Die }) {
   return (
     <svg viewBox="0 0 60 60" className="die-face" aria-hidden="true">
@@ -70,7 +78,7 @@ function DieButton({
   disabled,
   reroll,
 }: {
-  value: Die
+  value: Die | null
   onClick?: () => void
   disabled?: boolean
   reroll?: boolean
@@ -81,10 +89,14 @@ function DieButton({
       onClick={onClick}
       disabled={disabled}
       type="button"
-      aria-label={`Die ${value}${reroll ? ', selected for reroll' : ''}`}
+      aria-label={
+        value !== null
+          ? `Die ${value}${reroll ? ', selected for reroll' : ''}`
+          : 'Die not yet rolled'
+      }
       aria-pressed={reroll}
     >
-      <DiceFace value={value} />
+      {value !== null ? <DiceFace value={value} /> : <DiceFaceQuestion />}
     </button>
   )
 }
@@ -136,10 +148,24 @@ function CategorySections({
 }
 
 const MAX_ROLLS = 3
+const ANIMATION_BASE_MS = 1500
+const ANIMATION_JITTER_MS = 500
+const ANIMATION_TICK_MS = 150
 
 function RollingView({ state, dispatch }: Props) {
   const [rollCount, setRollCount] = useState(0)
   const [rerollIndices, setRerollIndices] = useState<Set<number>>(new Set())
+
+  // Random-mode animation state
+  const [animDisplay, setAnimDisplay] = useState<(Die | null)[]>([null, null, null, null, null])
+  const [isAnimating, setIsAnimating] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current !== null) clearInterval(intervalRef.current)
+    }
+  }, [])
 
   const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
@@ -149,23 +175,62 @@ function RollingView({ state, dispatch }: Props) {
     if (newMode === mode) return
     setRollCount(0)
     setRerollIndices(new Set())
+    setAnimDisplay([null, null, null, null, null])
     dispatch({ type: 'SET_ROLL_MODE', mode: newMode })
   }
 
-  function handleRoll() {
+  function handleRandomRoll() {
     const rng = seededRandom(Date.now())
-    if (rollCount === 0) {
-      const newDice: Die[] = Array.from({ length: 5 }, () => randomDie(rng))
-      dispatch({ type: 'SET_DICE', dice: newDice })
-    } else {
-      const next = [...state.dice] as Die[]
-      rerollIndices.forEach(idx => {
-        next[idx] = randomDie(rng)
-      })
-      dispatch({ type: 'SET_DICE', dice: next })
-    }
-    setRollCount(prev => prev + 1)
+    const finals: Die[] = Array.from({ length: 5 }, (_, i) =>
+      rerollIndices.has(i) || rollCount === 0
+        ? randomDie(rng)
+        : (state.dice[i] ?? randomDie(rng))
+    )
+
+    // Per-die settle time: base ± jitter
+    const rngJitter = seededRandom(Date.now() ^ 0xdeadbeef)
+    const settleTimes: number[] = finals.map((_, i) =>
+      rerollIndices.has(i) || rollCount === 0
+        ? ANIMATION_BASE_MS + (rngJitter() * 2 - 1) * ANIMATION_JITTER_MS
+        : 0
+    )
+    const maxSettle = Math.max(...settleTimes)
+
+    const settled = finals.map((_, i) => !(rerollIndices.has(i) || rollCount === 0))
+    const startTime = Date.now()
+
+    // Keep held dice visible as their current values during animation
+    setAnimDisplay(prev => prev.map((v, i) => settled[i] ? (state.dice[i] ?? v) : null))
+    setIsAnimating(true)
     setRerollIndices(new Set())
+
+    const animRng = seededRandom(Date.now() ^ 0xc0ffee)
+
+    intervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime
+
+      setAnimDisplay(prev => prev.map((v, i) => {
+        if (settled[i]) return v
+        if (elapsed >= settleTimes[i]) {
+          settled[i] = true
+          return finals[i]
+        }
+        return randomDie(animRng)
+      }))
+
+      if (elapsed >= maxSettle + ANIMATION_TICK_MS) {
+        clearInterval(intervalRef.current!)
+        intervalRef.current = null
+        setAnimDisplay(finals)
+        setIsAnimating(false)
+        const newRollCount = rollCount + 1
+        setRollCount(newRollCount)
+        dispatch({ type: 'SET_DICE', dice: finals })
+        if (newRollCount >= MAX_ROLLS) {
+          dispatch({ type: 'CONFIRM_DICE' })
+        }
+      }
+    }, ANIMATION_TICK_MS)
   }
 
   function toggleReroll(index: number) {
@@ -181,12 +246,17 @@ function RollingView({ state, dispatch }: Props) {
   const canAccept = rollCount > 0
 
   function randomSubtitle(): string {
+    if (isAnimating) return 'Rolling…'
     if (rollCount === 0) return 'Press Roll to begin'
-    if (rollCount >= MAX_ROLLS) return `Roll ${MAX_ROLLS} of ${MAX_ROLLS} · Press Accept to score your hand`
     return `Roll ${rollCount} of ${MAX_ROLLS} · Tap dice to reroll, or Accept to keep all`
   }
 
   const isManualInputDisabled = state.dice.length >= 5
+
+  // For random mode: displayed dice (animating or settled)
+  const displayDice: (Die | null)[] = isAnimating || rollCount === 0
+    ? animDisplay
+    : state.dice.map((v, i) => rerollIndices.has(i) ? null : v)
 
   return (
     <>
@@ -198,6 +268,7 @@ function RollingView({ state, dispatch }: Props) {
             type="button"
             className={`mode-toggle-btn${mode === 'manual' ? ' is-active' : ''}`}
             onClick={() => handleModeChange('manual')}
+            disabled={isAnimating}
           >
             Manual
           </button>
@@ -205,8 +276,9 @@ function RollingView({ state, dispatch }: Props) {
             type="button"
             className={`mode-toggle-btn${mode === 'random' ? ' is-active' : ''}`}
             onClick={() => handleModeChange('random')}
+            disabled={isAnimating}
           >
-            🎲 Random
+            �� Random
           </button>
         </div>
 
@@ -242,21 +314,21 @@ function RollingView({ state, dispatch }: Props) {
             <p className="turn-subtitle">{randomSubtitle()}</p>
 
             <section className="dice-hand" aria-label="Current hand">
-              {rollCount === 0 ? (
-                <p className="turn-muted">No dice rolled yet</p>
-              ) : (
-                <div className="dice-hand-row">
-                  {state.dice.map((die, i) => (
-                    <DieButton
-                      key={`${die}-${i}`}
-                      value={die}
-                      reroll={rerollIndices.has(i)}
-                      disabled={rollCount >= MAX_ROLLS}
-                      onClick={rollCount < MAX_ROLLS ? () => toggleReroll(i) : undefined}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="dice-hand-row" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+                {displayDice.map((value, i) => (
+                  <DieButton
+                    key={i}
+                    value={value}
+                    reroll={rerollIndices.has(i)}
+                    disabled={isAnimating || rollCount === 0 || rollCount >= MAX_ROLLS}
+                    onClick={
+                      !isAnimating && rollCount > 0 && rollCount < MAX_ROLLS
+                        ? () => toggleReroll(i)
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
             </section>
           </>
         )}
@@ -277,7 +349,7 @@ function RollingView({ state, dispatch }: Props) {
           <div className="rolling-footer-actions">
             <button
               className="btn-secondary"
-              disabled={!canAccept}
+              disabled={isAnimating || !canAccept}
               onClick={() => dispatch({ type: 'CONFIRM_DICE' })}
               type="button"
             >
@@ -285,8 +357,8 @@ function RollingView({ state, dispatch }: Props) {
             </button>
             <button
               className="btn-primary"
-              disabled={!canRoll}
-              onClick={handleRoll}
+              disabled={isAnimating || !canRoll}
+              onClick={handleRandomRoll}
               type="button"
             >
               {rollCount === 0 ? 'Roll' : `Reroll${rerollIndices.size > 0 ? ` (${rerollIndices.size})` : ''}`}

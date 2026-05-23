@@ -11,6 +11,7 @@ const twoPlayerScoring: GameState = {
   selectedCategory: null,
   yahtzeeBonuses: [0, 0],
   isBonusYahtzee: false,
+  rollMode: 'manual',
 }
 
 describe('CONFIRM_DICE', () => {
