@@ -89,7 +89,7 @@ function RollingView({ state, dispatch }: Props) {
             <p className="turn-muted">No dice selected yet</p>
           ) : (
             <div className="dice-hand-row">
-              {state.dice.map((die, i) => ({ die, i })).sort((a, b) => a.die - b.die).map(({ die, i }) => (
+              {state.dice.map((die, i) => (
                 <DieButton key={`${die}-${i}`} value={die} onClick={() => dispatch({ type: 'REMOVE_DIE', index: i })} />
               ))}
             </div>
@@ -128,7 +128,7 @@ function SelectingView({ state, dispatch }: Props) {
 
         <section className="dice-hand">
           <div className="dice-hand-row">
-            {state.dice.map((die, i) => (
+            {[...state.dice].sort((a, b) => a - b).map((die, i) => (
               <DieButton key={`${die}-${i}`} value={die} disabled />
             ))}
           </div>
