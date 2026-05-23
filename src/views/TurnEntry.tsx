@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState, Action } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
-import type { Category, Die } from '../scoring/types'
+import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
 
 interface Props {
@@ -89,6 +89,52 @@ function DieButton({
   )
 }
 
+// Shared category grid — pass onSelect to make it interactive, omit for read-only reference
+function CategorySections({
+  dice,
+  scores,
+  selectedCategory,
+  onSelect,
+}: {
+  dice: Die[]
+  scores: PlayerScore
+  selectedCategory?: Category | null
+  onSelect?: (category: Category) => void
+}) {
+  const sections: [string, Category[]][] = [
+    ['Upper Section', UPPER_CATEGORIES],
+    ['Lower Section', LOWER_CATEGORIES],
+  ]
+  return (
+    <>
+      {sections.map(([label, categories]) => (
+        <section key={label} className="category-section">
+          <h3>{label}</h3>
+          <div className="category-grid">
+            {categories.map(category => {
+              const lockedScore = scores[category]
+              const isLocked = lockedScore !== undefined
+              const isSelected = selectedCategory === category
+              return (
+                <button
+                  key={category}
+                  className={`category-card${isSelected ? ' is-selected' : ''}`}
+                  type="button"
+                  disabled={isLocked || !onSelect}
+                  onClick={onSelect && !isLocked ? () => onSelect(category) : undefined}
+                >
+                  <span>{CATEGORY_LABELS[category]}</span>
+                  <strong>{isLocked ? lockedScore : scoreCategory(category, dice)}</strong>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      ))}
+    </>
+  )
+}
+
 type RollMode = 'manual' | 'random'
 
 const MAX_ROLLS = 3
@@ -99,6 +145,7 @@ function RollingView({ state, dispatch }: Props) {
   const [rerollIndices, setRerollIndices] = useState<Set<number>>(new Set())
 
   const playerName = state.players[state.currentPlayer]
+  const currentScore = state.scores[state.currentPlayer] ?? {}
 
   function handleModeChange(newMode: RollMode) {
     if (newMode === mode) return
@@ -216,6 +263,8 @@ function RollingView({ state, dispatch }: Props) {
             </section>
           </>
         )}
+
+        <CategorySections dice={state.dice} scores={currentScore} />
       </div>
 
       <div className="turn-footer">
@@ -280,51 +329,12 @@ function SelectingView({ state, dispatch }: Props) {
           </div>
         </section>
 
-        <section className="category-section">
-          <h3>Upper Section</h3>
-          <div className="category-grid">
-            {UPPER_CATEGORIES.map(category => {
-              const lockedScore = currentScore[category]
-              const isLocked = lockedScore !== undefined
-              const isSelected = state.selectedCategory === category
-              return (
-                <button
-                  key={category}
-                  className={`category-card${isSelected ? ' is-selected' : ''}`}
-                  type="button"
-                  disabled={isLocked}
-                  onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
-                >
-                  <span>{CATEGORY_LABELS[category]}</span>
-                  <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="category-section">
-          <h3>Lower Section</h3>
-          <div className="category-grid">
-            {LOWER_CATEGORIES.map(category => {
-              const lockedScore = currentScore[category]
-              const isLocked = lockedScore !== undefined
-              const isSelected = state.selectedCategory === category
-              return (
-                <button
-                  key={category}
-                  className={`category-card${isSelected ? ' is-selected' : ''}`}
-                  type="button"
-                  disabled={isLocked}
-                  onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
-                >
-                  <span>{CATEGORY_LABELS[category]}</span>
-                  <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
-                </button>
-              )
-            })}
-          </div>
-        </section>
+        <CategorySections
+          dice={state.dice}
+          scores={currentScore}
+          selectedCategory={state.selectedCategory}
+          onSelect={category => dispatch({ type: 'SCORE_CATEGORY', category })}
+        />
       </div>
 
       <div className="turn-footer">
