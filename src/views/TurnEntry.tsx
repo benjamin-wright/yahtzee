@@ -148,9 +148,9 @@ function CategorySections({
 }
 
 const MAX_ROLLS = 3
-const ANIMATION_BASE_MS = 3000
+const ANIMATION_BASE_MS = 1500
 const ANIMATION_JITTER_MS = 500
-const ANIMATION_TICK_MS = 80
+const ANIMATION_TICK_MS = 150
 
 function RollingView({ state, dispatch }: Props) {
   const [rollCount, setRollCount] = useState(0)
@@ -223,8 +223,12 @@ function RollingView({ state, dispatch }: Props) {
         intervalRef.current = null
         setAnimDisplay(finals)
         setIsAnimating(false)
-        setRollCount(prev => prev + 1)
+        const newRollCount = rollCount + 1
+        setRollCount(newRollCount)
         dispatch({ type: 'SET_DICE', dice: finals })
+        if (newRollCount >= MAX_ROLLS) {
+          dispatch({ type: 'CONFIRM_DICE' })
+        }
       }
     }, ANIMATION_TICK_MS)
   }
@@ -244,7 +248,6 @@ function RollingView({ state, dispatch }: Props) {
   function randomSubtitle(): string {
     if (isAnimating) return 'Rolling…'
     if (rollCount === 0) return 'Press Roll to begin'
-    if (rollCount >= MAX_ROLLS) return `Roll ${MAX_ROLLS} of ${MAX_ROLLS} · Press Accept to score your hand`
     return `Roll ${rollCount} of ${MAX_ROLLS} · Tap dice to reroll, or Accept to keep all`
   }
 
