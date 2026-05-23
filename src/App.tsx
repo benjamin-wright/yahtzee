@@ -1,11 +1,16 @@
-import { useReducer } from 'react'
-import { reducer, initialState } from './state/reducer'
+import { useReducer, useEffect } from 'react'
+import { reducer } from './state/reducer'
+import { loadState, saveState } from './state/storage'
 import PlayerSetup from './views/PlayerSetup'
 import Scorecard from './views/Scorecard'
 import TurnEntry from './views/TurnEntry'
 
 function App() {
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [state, dispatch] = useReducer(reducer, undefined, loadState)
+
+  useEffect(() => {
+    saveState(state)
+  }, [state])
 
   return (
     <div id="app">
