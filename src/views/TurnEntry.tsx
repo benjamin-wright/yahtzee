@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Dispatch } from 'react'
-import type { GameState, Action } from '../state/types'
+import type { GameState, Action, RollMode } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
 import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
@@ -135,24 +135,21 @@ function CategorySections({
   )
 }
 
-type RollMode = 'manual' | 'random'
-
 const MAX_ROLLS = 3
 
 function RollingView({ state, dispatch }: Props) {
-  const [mode, setMode] = useState<RollMode>('manual')
   const [rollCount, setRollCount] = useState(0)
   const [rerollIndices, setRerollIndices] = useState<Set<number>>(new Set())
 
+  const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
   const currentScore = state.scores[state.currentPlayer] ?? {}
 
   function handleModeChange(newMode: RollMode) {
     if (newMode === mode) return
-    setMode(newMode)
     setRollCount(0)
     setRerollIndices(new Set())
-    dispatch({ type: 'CLEAR_DICE' })
+    dispatch({ type: 'SET_ROLL_MODE', mode: newMode })
   }
 
   function handleRoll() {
