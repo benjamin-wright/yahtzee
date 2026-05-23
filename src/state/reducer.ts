@@ -12,6 +12,7 @@ export const initialState: GameState = {
   selectedCategory: null,
   yahtzeeBonuses: [],
   isBonusYahtzee: false,
+  rollingMode: 'manual',
 }
 
 function allCategoriesScored(score: PlayerScore): boolean {
@@ -34,6 +35,7 @@ export function reducer(state: GameState, action: Action): GameState {
         selectedCategory: null,
         yahtzeeBonuses: action.players.map(() => 0),
         isBonusYahtzee: false,
+        rollingMode: action.rollingMode,
       }
 
     case 'ADD_DIE':

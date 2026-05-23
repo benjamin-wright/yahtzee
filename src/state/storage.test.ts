@@ -13,6 +13,7 @@ const sampleState: GameState = {
   selectedCategory: null,
   yahtzeeBonuses: [0, 0],
   isBonusYahtzee: false,
+  rollingMode: 'random',
 }
 
 describe('loadState', () => {

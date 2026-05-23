@@ -377,6 +377,66 @@ input[type='number']:focus {
   }
 }
 
+/* ─── Random rolling view ───────────────────────────────────── */
+.random-dice-hand {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.random-dice-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.die-button.is-reroll {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+  color: var(--accent);
+}
+
+.random-rolling-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Rolling mode selector ─────────────────────────────────── */
+.rolling-mode-options {
+  display: flex;
+  gap: 8px;
+}
+
+.rolling-mode-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.rolling-mode-option input[type='radio'] {
+  accent-color: var(--accent);
+}
+
+.rolling-mode-option.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+  color: var(--text-strong);
+}
+
 /* ─── Scorecard view ────────────────────────────────────────── */
 .view-scorecard {
   display: flex;

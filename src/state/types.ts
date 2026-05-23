@@ -1,6 +1,7 @@
 import type { Category, Die, PlayerScore } from '../scoring/types'
 
 export type Phase = 'setup' | 'rolling' | 'selecting' | 'scoring' | 'gameover'
+export type RollingMode = 'manual' | 'random'
 
 export interface GameState {
   phase: Phase
@@ -11,10 +12,11 @@ export interface GameState {
   selectedCategory: Category | null
   yahtzeeBonuses: number[]
   isBonusYahtzee: boolean
+  rollingMode: RollingMode
 }
 
 export type Action =
-  | { type: 'START_GAME'; players: string[] }
+  | { type: 'START_GAME'; players: string[]; rollingMode: RollingMode }
   | { type: 'ADD_DIE'; value: Die }
   | { type: 'REMOVE_DIE'; index: number }
   | { type: 'CONFIRM_DICE' }
