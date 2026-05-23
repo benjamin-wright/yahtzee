@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const MIN_PLAYERS = 2
+const MIN_PLAYERS = 1
 const MAX_PLAYERS = 6
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function PlayerSetup({ onStart }: Props) {
-  const [players, setPlayers] = useState<string[]>(['', ''])
+  const [players, setPlayers] = useState<string[]>([''])
 
   function updateName(index: number, name: string) {
     setPlayers(prev => prev.map((p, i) => (i === index ? name : p)))
@@ -38,7 +38,7 @@ export default function PlayerSetup({ onStart }: Props) {
   return (
     <main className="view-setup">
       <h1>Yahtzee</h1>
-      <p className="tagline">Score tracker for 2–{MAX_PLAYERS} players</p>
+      <p className="tagline">Score tracker for 1–{MAX_PLAYERS} players</p>
 
       <form className="setup-form" onSubmit={handleSubmit}>
         <fieldset>

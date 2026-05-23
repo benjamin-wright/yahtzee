@@ -36,7 +36,7 @@ function allUpperScored(score: PlayerScore): boolean {
 }
 
 export default function Scorecard({ state, dispatch }: Props) {
-  const { players, scores, phase } = state
+  const { players, scores, phase, yahtzeeBonuses } = state
   const isGameOver = phase === 'gameover'
 
   function handleExit() {
@@ -108,10 +108,22 @@ export default function Scorecard({ state, dispatch }: Props) {
                 ))}
               </tr>
             ))}
+            <tr className="subtotal-row">
+              <td className="row-label">YAHTZEE Bonus</td>
+              {scores.map((_s, i) => (
+                <td key={i} className="score-cell yahtzee-bonus-cell">
+                  <div className="yahtzee-bonus-marks">
+                    {Array.from({ length: yahtzeeBonuses[i] ?? 0 }, (_, j) => (
+                      <span key={j} className="yahtzee-bonus-mark" aria-label="bonus yahtzee">✕</span>
+                    ))}
+                  </div>
+                </td>
+              ))}
+            </tr>
             <tr className="total-row grand-total-row">
               <td className="row-label">Grand Total</td>
               {scores.map((s, i) => (
-                <td key={i} className="score-cell">{grandTotal(s)}</td>
+                <td key={i} className="score-cell">{grandTotal(s, yahtzeeBonuses[i] ?? 0)}</td>
               ))}
             </tr>
           </tbody>
