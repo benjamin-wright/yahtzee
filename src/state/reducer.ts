@@ -47,6 +47,14 @@ export function reducer(state: GameState, action: Action): GameState {
         dice: state.dice.filter((_, i) => i !== action.index),
       }
 
+    case 'SET_DICE':
+      if (state.phase !== 'rolling' || action.dice.length !== 5) return state
+      return { ...state, dice: action.dice }
+
+    case 'CLEAR_DICE':
+      if (state.phase !== 'rolling') return state
+      return { ...state, dice: [] }
+
     case 'CONFIRM_DICE': {
       if (state.phase !== 'rolling' || state.dice.length !== 5) return state
       const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee !== undefined

@@ -17,6 +17,8 @@ export type Action =
   | { type: 'START_GAME'; players: string[] }
   | { type: 'ADD_DIE'; value: Die }
   | { type: 'REMOVE_DIE'; index: number }
+  | { type: 'SET_DICE'; dice: Die[] }
+  | { type: 'CLEAR_DICE' }
   | { type: 'CONFIRM_DICE' }
   | { type: 'SCORE_CATEGORY'; category: Category }
   | { type: 'END_TURN' }
