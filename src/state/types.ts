@@ -8,6 +8,7 @@ export interface GameState {
   scores: PlayerScore[]
   currentPlayer: number
   dice: Die[]
+  selectedCategory: Category | null
 }
 
 export type Action =
@@ -16,5 +17,6 @@ export type Action =
   | { type: 'REMOVE_DIE'; index: number }
   | { type: 'CONFIRM_DICE' }
   | { type: 'SCORE_CATEGORY'; category: Category }
+  | { type: 'END_TURN' }
   | { type: 'NEXT_TURN' }
   | { type: 'RESET_GAME' }

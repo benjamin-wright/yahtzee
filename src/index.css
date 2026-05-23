@@ -224,6 +224,126 @@ input[type='number']:focus {
   font-size: 1.05rem;
 }
 
+/* ─── Turn entry view ────────────────────────────────────────── */
+.view-turn-entry {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.view-turn-entry h2 {
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+}
+
+.turn-subtitle {
+  color: var(--text-muted);
+  margin-top: -8px;
+}
+
+.turn-muted {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 10px 0;
+}
+
+.dice-input-row,
+.dice-hand-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.dice-hand {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.die-button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  min-height: 44px;
+  background: var(--surface);
+  color: var(--text-strong);
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 0;
+}
+
+.die-button:not(:disabled):hover {
+  background: var(--surface-raised);
+}
+
+.category-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-section h3 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.category-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.category-card strong {
+  color: var(--text-strong);
+  font-size: 1.1rem;
+}
+
+.category-card:not(:disabled):hover {
+  background: var(--surface-raised);
+}
+
+.category-card.is-selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.turn-primary-action {
+  width: 100%;
+  margin-top: 4px;
+}
+
+@media (max-width: 560px) {
+  .dice-input-row,
+  .dice-hand-row {
+    gap: 8px;
+  }
+
+  .category-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Scorecard view ────────────────────────────────────────── */
 .view-scorecard {
   display: flex;
@@ -356,4 +476,3 @@ input[type='number']:focus {
   padding: 14px;
   font-size: 1rem;
 }
-
