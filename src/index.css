@@ -446,10 +446,6 @@ input[type='number']:focus {
   background: var(--surface-raised);
 }
 
-.scorecard-table tbody tr:hover {
-  background: var(--accent-bg);
-}
-
 .scorecard-table .section-header td {
   padding: 6px 12px;
   font-size: 0.72rem;
@@ -462,9 +458,6 @@ input[type='number']:focus {
   border-bottom: 1px solid var(--border);
 }
 
-.scorecard-table .section-header:hover {
-  background: var(--bg);
-}
 
 .scorecard-table .row-label {
   padding: 9px 12px;
