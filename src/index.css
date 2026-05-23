@@ -68,7 +68,7 @@ p {
 
 /* ─── App shell ─────────────────────────────────────────────── */
 #app {
-  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding-top: env(safe-area-inset-top);
@@ -161,6 +161,7 @@ input[type='number']:focus {
   align-items: center;
   padding: 56px 16px 40px;
   flex: 1;
+  overflow-y: auto;
 }
 
 .view-setup h1 {
