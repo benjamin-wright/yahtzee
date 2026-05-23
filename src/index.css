@@ -285,6 +285,17 @@ input[type='number']:focus {
   letter-spacing: -0.02em;
 }
 
+.turn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.turn-header .mode-toggle {
+  flex-shrink: 0;
+}
+
 .turn-subtitle {
   color: var(--text-muted);
   margin-top: -8px;
@@ -398,7 +409,6 @@ input[type='number']:focus {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  align-self: flex-start;
 }
 
 .mode-toggle-btn {

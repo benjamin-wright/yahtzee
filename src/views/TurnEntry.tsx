@@ -261,25 +261,27 @@ function RollingView({ state, dispatch }: Props) {
   return (
     <>
       <div className="turn-scroll-body">
-        <h2>{playerName}'s Roll</h2>
+        <div className="turn-header">
+          <h2>{playerName}'s Roll</h2>
 
-        <div className="mode-toggle" role="group" aria-label="Roll mode">
-          <button
-            type="button"
-            className={`mode-toggle-btn${mode === 'manual' ? ' is-active' : ''}`}
-            onClick={() => handleModeChange('manual')}
-            disabled={isAnimating}
-          >
-            Manual
-          </button>
-          <button
-            type="button"
-            className={`mode-toggle-btn${mode === 'random' ? ' is-active' : ''}`}
-            onClick={() => handleModeChange('random')}
-            disabled={isAnimating}
-          >
-            �� Random
-          </button>
+          <div className="mode-toggle" role="group" aria-label="Roll mode">
+            <button
+              type="button"
+              className={`mode-toggle-btn${mode === 'manual' ? ' is-active' : ''}`}
+              onClick={() => handleModeChange('manual')}
+              disabled={isAnimating}
+            >
+              Manual
+            </button>
+            <button
+              type="button"
+              className={`mode-toggle-btn${mode === 'random' ? ' is-active' : ''}`}
+              onClick={() => handleModeChange('random')}
+              disabled={isAnimating}
+            >
+              🎲 Random
+            </button>
+          </div>
         </div>
 
         {mode === 'manual' ? (
