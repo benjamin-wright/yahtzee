@@ -382,13 +382,13 @@ function SelectingView({ state, dispatch }: Props) {
         <h2>{playerName}'s Category</h2>
         <p className="turn-subtitle">
           {state.isBonusYahtzee
-            ? 'Bonus YAHTZEE! Pick any other category — +50 pts added automatically'
+            ? 'Bonus YAHTZEE! Pick any other category — +100 pts added automatically'
             : 'Choose where to score this hand'}
         </p>
 
         {state.isBonusYahtzee && (
           <div className="bonus-yahtzee-banner" role="status">
-            🎲 BONUS YAHTZEE! <strong>+50 pts</strong>
+            🎲 BONUS YAHTZEE! <strong>+100 pts</strong>
           </div>
         )}
 
