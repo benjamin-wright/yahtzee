@@ -486,11 +486,14 @@ input[type='number']:focus {
 }
 
 .yahtzee-bonus-cell {
+  padding: 6px 12px;
+}
+
+.yahtzee-bonus-marks {
   display: flex;
   justify-content: center;
   gap: 4px;
   flex-wrap: wrap;
-  padding: 6px 12px;
 }
 
 .yahtzee-bonus-mark {

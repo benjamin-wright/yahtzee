@@ -112,9 +112,11 @@ export default function Scorecard({ state, dispatch }: Props) {
               <td className="row-label">YAHTZEE Bonus</td>
               {scores.map((_s, i) => (
                 <td key={i} className="score-cell yahtzee-bonus-cell">
-                  {Array.from({ length: yahtzeeBonuses[i] ?? 0 }, (_, j) => (
-                    <span key={j} className="yahtzee-bonus-mark" aria-label="bonus yahtzee">✕</span>
-                  ))}
+                  <div className="yahtzee-bonus-marks">
+                    {Array.from({ length: yahtzeeBonuses[i] ?? 0 }, (_, j) => (
+                      <span key={j} className="yahtzee-bonus-mark" aria-label="bonus yahtzee">✕</span>
+                    ))}
+                  </div>
                 </td>
               ))}
             </tr>
