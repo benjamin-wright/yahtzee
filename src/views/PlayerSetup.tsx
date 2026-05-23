@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import type { RollingMode } from '../state/types'
 
 const MIN_PLAYERS = 1
 const MAX_PLAYERS = 6
 
 interface Props {
-  onStart: (players: string[], rollingMode: RollingMode) => void
+  onStart: (players: string[]) => void
 }
 
 export default function PlayerSetup({ onStart }: Props) {
   const [players, setPlayers] = useState<string[]>([''])
-  const [rollingMode, setRollingMode] = useState<RollingMode>('manual')
 
   function updateName(index: number, name: string) {
     setPlayers(prev => prev.map((p, i) => (i === index ? name : p)))
@@ -28,7 +26,7 @@ export default function PlayerSetup({ onStart }: Props) {
     e.preventDefault()
     const names = players.map(p => p.trim()).filter(Boolean)
     if (names.length >= MIN_PLAYERS) {
-      onStart(names, rollingMode)
+      onStart(names)
     }
   }
 
@@ -72,32 +70,6 @@ export default function PlayerSetup({ onStart }: Props) {
               + Add player
             </button>
           )}
-        </fieldset>
-
-        <fieldset>
-          <legend>Rolling mode</legend>
-          <div className="rolling-mode-options">
-            <label className={`rolling-mode-option${rollingMode === 'manual' ? ' is-selected' : ''}`}>
-              <input
-                type="radio"
-                name="rollingMode"
-                value="manual"
-                checked={rollingMode === 'manual'}
-                onChange={() => setRollingMode('manual')}
-              />
-              Manual
-            </label>
-            <label className={`rolling-mode-option${rollingMode === 'random' ? ' is-selected' : ''}`}>
-              <input
-                type="radio"
-                name="rollingMode"
-                value="random"
-                checked={rollingMode === 'random'}
-                onChange={() => setRollingMode('random')}
-              />
-              Random
-            </label>
-          </div>
         </fieldset>
 
         <button type="submit" className="btn-primary" disabled={!canStart}>

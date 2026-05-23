@@ -17,5 +17,5 @@ export function lowerTotal(scores: PlayerScore): number {
 }
 
 export function grandTotal(scores: PlayerScore, bonusYahtzees: number = 0): number {
-  return upperTotal(scores) + upperBonus(scores) + lowerTotal(scores) + bonusYahtzees * 50
+  return upperTotal(scores) + upperBonus(scores) + lowerTotal(scores) + bonusYahtzees * 100
 }

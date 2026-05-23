@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, type Dispatch } from 'react'
-import type { GameState, Action } from '../state/types'
+import { useState, useEffect, useRef } from 'react'
+import type { Dispatch } from 'react'
+import type { GameState, Action, RollMode } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
-import type { Category, Die } from '../scoring/types'
+import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
 
 interface Props {
@@ -37,6 +38,22 @@ const DIE_DOTS: Record<Die, [number, number][]> = {
   6: [[18, 18], [42, 18], [18, 30], [42, 30], [18, 42], [42, 42]],
 }
 
+// Mulberry32 seeded PRNG — seed with Date.now() for non-deterministic rolls
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0
+  return (): number => {
+    s += 0x6d2b79f5
+    let z = s
+    z = Math.imul(z ^ (z >>> 15), z | 1)
+    z ^= z + Math.imul(z ^ (z >>> 7), z | 61)
+    return ((z ^ (z >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function randomDie(rng: () => number): Die {
+  return (Math.floor(rng() * 6) + 1) as Die
+}
+
 function DiceFaceQuestion() {
   return (
     <svg viewBox="0 0 60 60" className="die-face" aria-hidden="true">
@@ -59,57 +76,73 @@ function DieButton({
   value,
   onClick,
   disabled,
+  reroll,
 }: {
-  value: Die
+  value: Die | null
   onClick?: () => void
   disabled?: boolean
+  reroll?: boolean
 }) {
   return (
-    <button className="die-button" onClick={onClick} disabled={disabled} type="button" aria-label={`Die ${value}`}>
-      <DiceFace value={value} />
+    <button
+      className={`die-button${reroll ? ' die-button--reroll' : ''}`}
+      onClick={onClick}
+      disabled={disabled}
+      type="button"
+      aria-label={
+        value !== null
+          ? `Die ${value}${reroll ? ', selected for reroll' : ''}`
+          : 'Die not yet rolled'
+      }
+      aria-pressed={reroll}
+    >
+      {value !== null ? <DiceFace value={value} /> : <DiceFaceQuestion />}
     </button>
   )
 }
 
-function RollingView({ state, dispatch }: Props) {
-  const isInputDisabled = state.dice.length >= 5
-  const playerName = state.players[state.currentPlayer]
-
+// Shared category grid — pass onSelect to make it interactive, omit for read-only reference
+function CategorySections({
+  dice,
+  scores,
+  selectedCategory,
+  onSelect,
+}: {
+  dice: Die[]
+  scores: PlayerScore
+  selectedCategory?: Category | null
+  onSelect?: (category: Category) => void
+}) {
+  const sections: [string, Category[]][] = [
+    ['Upper Section', UPPER_CATEGORIES],
+    ['Lower Section', LOWER_CATEGORIES],
+  ]
   return (
     <>
-      <div className="turn-scroll-body">
-        <h2>{playerName}'s Roll</h2>
-        <p className="turn-subtitle">Tap dice below to build your hand ({state.dice.length}/5)</p>
-
-        <section className="dice-input-row" aria-label="Dice input values">
-          {DICE_VALUES.map(value => (
-            <DieButton
-              key={value}
-              value={value}
-              disabled={isInputDisabled}
-              onClick={() => dispatch({ type: 'ADD_DIE', value })}
-            />
-          ))}
+      {sections.map(([label, categories]) => (
+        <section key={label} className="category-section">
+          <h3>{label}</h3>
+          <div className="category-grid">
+            {categories.map(category => {
+              const lockedScore = scores[category]
+              const isLocked = lockedScore !== undefined
+              const isSelected = selectedCategory === category
+              return (
+                <button
+                  key={category}
+                  className={`category-card${isSelected ? ' is-selected' : ''}`}
+                  type="button"
+                  disabled={isLocked || !onSelect}
+                  onClick={onSelect && !isLocked ? () => onSelect(category) : undefined}
+                >
+                  <span>{CATEGORY_LABELS[category]}</span>
+                  <strong>{isLocked ? lockedScore : scoreCategory(category, dice)}</strong>
+                </button>
+              )
+            })}
+          </div>
         </section>
-
-        <section className="dice-hand" aria-label="Current hand">
-          {state.dice.length === 0 ? (
-            <p className="turn-muted">No dice selected yet</p>
-          ) : (
-            <div className="dice-hand-row">
-              {state.dice.map((die, i) => (
-                <DieButton key={`${die}-${i}`} value={die} onClick={() => dispatch({ type: 'REMOVE_DIE', index: i })} />
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
-      <div className="turn-footer">
-        <button className="btn-primary turn-primary-action" disabled={state.dice.length !== 5} onClick={() => dispatch({ type: 'CONFIRM_DICE' })}>
-          Continue
-        </button>
-      </div>
+      ))}
     </>
   )
 }
@@ -119,19 +152,13 @@ const ANIMATION_BASE_MS = 3000
 const ANIMATION_JITTER_MS = 500
 const ANIMATION_TICK_MS = 80
 
-function rollDie(): Die {
-  return (Math.floor(Math.random() * 6) + 1) as Die
-}
-
-function RandomRollingView({ state, dispatch }: Props) {
-  const playerName = state.players[state.currentPlayer]
-
-  const [diceDisplay, setDiceDisplay] = useState<(Die | null)[]>([null, null, null, null, null])
-  const [settledValues, setSettledValues] = useState<(Die | null)[]>([null, null, null, null, null])
-  const [rerollSelected, setRerollSelected] = useState<boolean[]>([true, true, true, true, true])
-  const [isAnimating, setIsAnimating] = useState(false)
+function RollingView({ state, dispatch }: Props) {
   const [rollCount, setRollCount] = useState(0)
+  const [rerollIndices, setRerollIndices] = useState<Set<number>>(new Set())
 
+  // Random-mode animation state
+  const [animDisplay, setAnimDisplay] = useState<(Die | null)[]>([null, null, null, null, null])
+  const [isAnimating, setIsAnimating] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -140,131 +167,199 @@ function RandomRollingView({ state, dispatch }: Props) {
     }
   }, [])
 
-  function handleRoll() {
+  const mode = state.rollMode
+  const playerName = state.players[state.currentPlayer]
+  const currentScore = state.scores[state.currentPlayer] ?? {}
+
+  function handleModeChange(newMode: RollMode) {
+    if (newMode === mode) return
+    setRollCount(0)
+    setRerollIndices(new Set())
+    setAnimDisplay([null, null, null, null, null])
+    dispatch({ type: 'SET_ROLL_MODE', mode: newMode })
+  }
+
+  function handleRandomRoll() {
+    const rng = seededRandom(Date.now())
     const finals: Die[] = Array.from({ length: 5 }, (_, i) =>
-      rerollSelected[i] ? rollDie() : (settledValues[i] ?? rollDie())
+      rerollIndices.has(i) || rollCount === 0
+        ? randomDie(rng)
+        : (state.dice[i] ?? randomDie(rng))
     )
 
-    const settleTimes: number[] = rerollSelected.map(r =>
-      r ? ANIMATION_BASE_MS + (Math.random() * 2 - 1) * ANIMATION_JITTER_MS : 0
+    // Per-die settle time: base ± jitter
+    const rngJitter = seededRandom(Date.now() ^ 0xdeadbeef)
+    const settleTimes: number[] = finals.map((_, i) =>
+      rerollIndices.has(i) || rollCount === 0
+        ? ANIMATION_BASE_MS + (rngJitter() * 2 - 1) * ANIMATION_JITTER_MS
+        : 0
     )
     const maxSettle = Math.max(...settleTimes)
 
-    const settled = rerollSelected.map(r => !r)
+    const settled = finals.map((_, i) => !(rerollIndices.has(i) || rollCount === 0))
     const startTime = Date.now()
 
-    setDiceDisplay(prev => prev.map((v, i) => rerollSelected[i] ? null : v))
+    // Keep held dice visible as their current values during animation
+    setAnimDisplay(prev => prev.map((v, i) => settled[i] ? (state.dice[i] ?? v) : null))
     setIsAnimating(true)
+    setRerollIndices(new Set())
+
+    const animRng = seededRandom(Date.now() ^ 0xc0ffee)
 
     intervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTime
 
-      setDiceDisplay(prev => prev.map((v, i) => {
-        if (!rerollSelected[i]) return v
-        if (settled[i]) return finals[i]
+      setAnimDisplay(prev => prev.map((v, i) => {
+        if (settled[i]) return v
         if (elapsed >= settleTimes[i]) {
           settled[i] = true
           return finals[i]
         }
-        return rollDie()
+        return randomDie(animRng)
       }))
 
       if (elapsed >= maxSettle + ANIMATION_TICK_MS) {
         clearInterval(intervalRef.current!)
         intervalRef.current = null
-        setDiceDisplay(finals)
-        setSettledValues(finals)
-        setRerollSelected([false, false, false, false, false])
+        setAnimDisplay(finals)
         setIsAnimating(false)
-        setRollCount(c => c + 1)
+        setRollCount(prev => prev + 1)
+        dispatch({ type: 'SET_DICE', dice: finals })
       }
     }, ANIMATION_TICK_MS)
   }
 
-  function toggleReroll(i: number) {
-    const willReroll = !rerollSelected[i]
-    setRerollSelected(prev => { const n = [...prev]; n[i] = willReroll; return n })
-    setDiceDisplay(prev => {
-      const n = [...prev]
-      n[i] = willReroll ? null : settledValues[i]
-      return n
+  function toggleReroll(index: number) {
+    setRerollIndices(prev => {
+      const next = new Set(prev)
+      if (next.has(index)) next.delete(index)
+      else next.add(index)
+      return next
     })
   }
 
-  function handleConfirm() {
-    const values = settledValues.filter((v): v is Die => v !== null)
-    if (values.length !== 5) return
-    values.forEach(v => dispatch({ type: 'ADD_DIE', value: v }))
-    dispatch({ type: 'CONFIRM_DICE' })
+  const canRoll = rollCount === 0 || (rollCount < MAX_ROLLS && rerollIndices.size > 0)
+  const canAccept = rollCount > 0
+
+  function randomSubtitle(): string {
+    if (isAnimating) return 'Rolling…'
+    if (rollCount === 0) return 'Press Roll to begin'
+    if (rollCount >= MAX_ROLLS) return `Roll ${MAX_ROLLS} of ${MAX_ROLLS} · Press Accept to score your hand`
+    return `Roll ${rollCount} of ${MAX_ROLLS} · Tap dice to reroll, or Accept to keep all`
   }
 
-  const hasRolled = rollCount > 0
-  const canReroll = hasRolled && rerollSelected.some(Boolean) && rollCount < MAX_ROLLS
-  const rollsRemaining = MAX_ROLLS - rollCount
+  const isManualInputDisabled = state.dice.length >= 5
+
+  // For random mode: displayed dice (animating or settled)
+  const displayDice: (Die | null)[] = isAnimating || rollCount === 0
+    ? animDisplay
+    : state.dice.map((v, i) => rerollIndices.has(i) ? null : v)
 
   return (
     <>
       <div className="turn-scroll-body">
         <h2>{playerName}'s Roll</h2>
-        <p className="turn-subtitle">
-          {isAnimating
-            ? 'Rolling…'
-            : hasRolled
-              ? rollsRemaining > 0
-                ? 'Tap a die to mark it for rerolling'
-                : 'No rolls remaining'
-              : 'Ready to roll your dice?'}
-        </p>
 
-        <section className="random-dice-hand" aria-label="Dice">
-          <div className="random-dice-row">
-            {diceDisplay.map((value, i) => (
-              <button
-                key={i}
-                className={`die-button${rerollSelected[i] ? ' is-reroll' : ''}`}
-                onClick={() => !isAnimating && hasRolled && rollsRemaining > 0 && toggleReroll(i)}
-                disabled={isAnimating || !hasRolled || rollsRemaining === 0}
-                type="button"
-                aria-label={
-                  value !== null
-                    ? `Die ${value}${rerollSelected[i] ? ', selected to reroll' : ''}`
-                    : 'Die not yet rolled'
-                }
-              >
-                {value !== null ? <DiceFace value={value} /> : <DiceFaceQuestion />}
-              </button>
-            ))}
-          </div>
-        </section>
+        <div className="mode-toggle" role="group" aria-label="Roll mode">
+          <button
+            type="button"
+            className={`mode-toggle-btn${mode === 'manual' ? ' is-active' : ''}`}
+            onClick={() => handleModeChange('manual')}
+            disabled={isAnimating}
+          >
+            Manual
+          </button>
+          <button
+            type="button"
+            className={`mode-toggle-btn${mode === 'random' ? ' is-active' : ''}`}
+            onClick={() => handleModeChange('random')}
+            disabled={isAnimating}
+          >
+            �� Random
+          </button>
+        </div>
+
+        {mode === 'manual' ? (
+          <>
+            <p className="turn-subtitle">Tap dice below to build your hand ({state.dice.length}/5)</p>
+
+            <section className="dice-input-row" aria-label="Dice input values">
+              {DICE_VALUES.map(value => (
+                <DieButton
+                  key={value}
+                  value={value}
+                  disabled={isManualInputDisabled}
+                  onClick={() => dispatch({ type: 'ADD_DIE', value })}
+                />
+              ))}
+            </section>
+
+            <section className="dice-hand" aria-label="Current hand">
+              {state.dice.length === 0 ? (
+                <p className="turn-muted">No dice selected yet</p>
+              ) : (
+                <div className="dice-hand-row">
+                  {state.dice.map((die, i) => (
+                    <DieButton key={`${die}-${i}`} value={die} onClick={() => dispatch({ type: 'REMOVE_DIE', index: i })} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <>
+            <p className="turn-subtitle">{randomSubtitle()}</p>
+
+            <section className="dice-hand" aria-label="Current hand">
+              <div className="dice-hand-row" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+                {displayDice.map((value, i) => (
+                  <DieButton
+                    key={i}
+                    value={value}
+                    reroll={rerollIndices.has(i)}
+                    disabled={isAnimating || rollCount === 0 || rollCount >= MAX_ROLLS}
+                    onClick={
+                      !isAnimating && rollCount > 0 && rollCount < MAX_ROLLS
+                        ? () => toggleReroll(i)
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        <CategorySections dice={state.dice} scores={currentScore} />
       </div>
 
       <div className="turn-footer">
-        {!hasRolled ? (
+        {mode === 'manual' ? (
           <button
             className="btn-primary turn-primary-action"
-            disabled={isAnimating}
-            onClick={handleRoll}
+            disabled={state.dice.length !== 5}
+            onClick={() => dispatch({ type: 'CONFIRM_DICE' })}
           >
-            Roll
+            Continue
           </button>
         ) : (
-          <div className="random-rolling-actions">
+          <div className="rolling-footer-actions">
             <button
-              className="btn-primary turn-primary-action"
-              disabled={isAnimating}
-              onClick={handleConfirm}
+              className="btn-secondary"
+              disabled={isAnimating || !canAccept}
+              onClick={() => dispatch({ type: 'CONFIRM_DICE' })}
+              type="button"
             >
-              Continue
+              Accept
             </button>
-            {rollCount < MAX_ROLLS && (
-              <button
-                className="btn-secondary turn-primary-action"
-                disabled={isAnimating || !canReroll}
-                onClick={handleRoll}
-              >
-                Reroll selected
-              </button>
-            )}
+            <button
+              className="btn-primary"
+              disabled={isAnimating || !canRoll}
+              onClick={handleRandomRoll}
+              type="button"
+            >
+              {rollCount === 0 ? 'Roll' : `Reroll${rerollIndices.size > 0 ? ` (${rerollIndices.size})` : ''}`}
+            </button>
           </div>
         )}
       </div>
@@ -300,51 +395,12 @@ function SelectingView({ state, dispatch }: Props) {
           </div>
         </section>
 
-        <section className="category-section">
-          <h3>Upper Section</h3>
-          <div className="category-grid">
-            {UPPER_CATEGORIES.map(category => {
-              const lockedScore = currentScore[category]
-              const isLocked = lockedScore !== undefined
-              const isSelected = state.selectedCategory === category
-              return (
-                <button
-                  key={category}
-                  className={`category-card${isSelected ? ' is-selected' : ''}`}
-                  type="button"
-                  disabled={isLocked}
-                  onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
-                >
-                  <span>{CATEGORY_LABELS[category]}</span>
-                  <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="category-section">
-          <h3>Lower Section</h3>
-          <div className="category-grid">
-            {LOWER_CATEGORIES.map(category => {
-              const lockedScore = currentScore[category]
-              const isLocked = lockedScore !== undefined
-              const isSelected = state.selectedCategory === category
-              return (
-                <button
-                  key={category}
-                  className={`category-card${isSelected ? ' is-selected' : ''}`}
-                  type="button"
-                  disabled={isLocked}
-                  onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
-                >
-                  <span>{CATEGORY_LABELS[category]}</span>
-                  <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
-                </button>
-              )
-            })}
-          </div>
-        </section>
+        <CategorySections
+          dice={state.dice}
+          scores={currentScore}
+          selectedCategory={state.selectedCategory}
+          onSelect={category => dispatch({ type: 'SCORE_CATEGORY', category })}
+        />
       </div>
 
       <div className="turn-footer">
@@ -359,8 +415,7 @@ function SelectingView({ state, dispatch }: Props) {
 export default function TurnEntry({ state, dispatch }: Props) {
   return (
     <main className="view-turn-entry">
-      {state.phase === 'rolling' && state.rollingMode === 'manual' ? <RollingView state={state} dispatch={dispatch} /> : null}
-      {state.phase === 'rolling' && state.rollingMode === 'random' ? <RandomRollingView state={state} dispatch={dispatch} /> : null}
+      {state.phase === 'rolling' ? <RollingView state={state} dispatch={dispatch} /> : null}
       {state.phase === 'selecting' ? <SelectingView state={state} dispatch={dispatch} /> : null}
     </main>
   )

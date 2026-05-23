@@ -15,7 +15,7 @@ function App() {
   return (
     <div id="app">
       {state.phase === 'setup' && (
-        <PlayerSetup onStart={(players, rollingMode) => dispatch({ type: 'START_GAME', players, rollingMode })} />
+        <PlayerSetup onStart={players => dispatch({ type: 'START_GAME', players })} />
       )}
       {(state.phase === 'rolling' || state.phase === 'selecting') && (
         <TurnEntry state={state} dispatch={dispatch} />
