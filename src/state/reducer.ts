@@ -1,6 +1,6 @@
 import type { PlayerScore } from '../scoring/types'
 import { CATEGORIES } from '../scoring/types'
-import { scoreCategory } from '../scoring/categories'
+import { scoreCategory, scoreYahtzee } from '../scoring/categories'
 import type { GameState, Action } from './types'
 
 export const initialState: GameState = {
@@ -10,6 +10,8 @@ export const initialState: GameState = {
   currentPlayer: 0,
   dice: [],
   selectedCategory: null,
+  yahtzeeBonuses: [],
+  isBonusYahtzee: false,
 }
 
 function allCategoriesScored(score: PlayerScore): boolean {
@@ -30,6 +32,8 @@ export function reducer(state: GameState, action: Action): GameState {
         currentPlayer: -1,
         dice: [],
         selectedCategory: null,
+        yahtzeeBonuses: action.players.map(() => 0),
+        isBonusYahtzee: false,
       }
 
     case 'ADD_DIE':
@@ -43,9 +47,12 @@ export function reducer(state: GameState, action: Action): GameState {
         dice: state.dice.filter((_, i) => i !== action.index),
       }
 
-    case 'CONFIRM_DICE':
+    case 'CONFIRM_DICE': {
       if (state.phase !== 'rolling' || state.dice.length !== 5) return state
-      return { ...state, phase: 'selecting', selectedCategory: null }
+      const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee !== undefined
+      const isBonusYahtzee = scoreYahtzee(state.dice) === 50 && yahtzeeAlreadyScored
+      return { ...state, phase: 'selecting', selectedCategory: null, isBonusYahtzee }
+    }
 
     case 'SCORE_CATEGORY':
       if (state.phase !== 'selecting') return state
@@ -55,23 +62,27 @@ export function reducer(state: GameState, action: Action): GameState {
     case 'END_TURN': {
       if (state.phase !== 'selecting' || !state.selectedCategory) return state
       const selectedCategory = state.selectedCategory
+      const currentPlayerIdx = state.currentPlayer
       const newScores = state.scores.map((s, i) => {
-        if (i !== state.currentPlayer) return s
+        if (i !== currentPlayerIdx) return s
         return {
           ...s,
           [selectedCategory]: scoreCategory(selectedCategory, state.dice),
         }
       })
+      const newYahtzeeBonuses = state.isBonusYahtzee
+        ? state.yahtzeeBonuses.map((b, i) => (i === currentPlayerIdx ? b + 1 : b))
+        : state.yahtzeeBonuses
       if (isGameOver(newScores)) {
-        return { ...state, phase: 'gameover', scores: newScores, dice: [], selectedCategory: null }
+        return { ...state, phase: 'gameover', scores: newScores, yahtzeeBonuses: newYahtzeeBonuses, dice: [], selectedCategory: null, isBonusYahtzee: false }
       }
-      return { ...state, phase: 'scoring', scores: newScores, dice: [], selectedCategory: null }
+      return { ...state, phase: 'scoring', scores: newScores, yahtzeeBonuses: newYahtzeeBonuses, dice: [], selectedCategory: null, isBonusYahtzee: false }
     }
 
     case 'NEXT_TURN': {
       if (state.phase !== 'scoring') return state
       const next = (state.currentPlayer + 1) % state.players.length
-      return { ...state, phase: 'rolling', currentPlayer: next, dice: [], selectedCategory: null }
+      return { ...state, phase: 'rolling', currentPlayer: next, dice: [], selectedCategory: null, isBonusYahtzee: false }
     }
 
     case 'RESET_GAME':

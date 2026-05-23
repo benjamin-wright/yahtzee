@@ -253,6 +253,17 @@ input[type='number']:focus {
   box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
 }
 
+.bonus-yahtzee-banner {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-weight: 700;
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 1rem;
+}
+
 .view-turn-entry h2 {
   font-size: 1.4rem;
   letter-spacing: -0.02em;
@@ -472,6 +483,28 @@ input[type='number']:focus {
   font-size: 0.85rem;
   color: var(--text-muted);
   border-top: 1px solid var(--border);
+}
+
+.yahtzee-bonus-cell {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+}
+
+.yahtzee-bonus-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .scorecard-table .total-row td {

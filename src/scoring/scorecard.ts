@@ -16,6 +16,6 @@ export function lowerTotal(scores: PlayerScore): number {
   return LOWER_CATEGORIES.reduce((sum, cat) => sum + (scores[cat] ?? 0), 0)
 }
 
-export function grandTotal(scores: PlayerScore): number {
-  return upperTotal(scores) + upperBonus(scores) + lowerTotal(scores)
+export function grandTotal(scores: PlayerScore, bonusYahtzees: number = 0): number {
+  return upperTotal(scores) + upperBonus(scores) + lowerTotal(scores) + bonusYahtzees * 50
 }

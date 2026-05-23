@@ -9,6 +9,8 @@ export interface GameState {
   currentPlayer: number
   dice: Die[]
   selectedCategory: Category | null
+  yahtzeeBonuses: number[]
+  isBonusYahtzee: boolean
 }
 
 export type Action =

@@ -92,4 +92,14 @@ describe('scorecard totals', () => {
     }
     expect(grandTotal(scores)).toBe(63 + 35 + 205)
   })
+
+  it('adds 50 per bonus yahtzee to grand total', () => {
+    const scores = {
+      ones: 3, twos: 6, threes: 9, fours: 12, fives: 15, sixes: 18,
+      threeOfAKind: 18, fourOfAKind: 20, fullHouse: 25,
+      smallStraight: 30, largeStraight: 40, yahtzee: 50, chance: 22,
+    }
+    expect(grandTotal(scores, 1)).toBe(63 + 35 + 205 + 50)
+    expect(grandTotal(scores, 3)).toBe(63 + 35 + 205 + 150)
+  })
 })
