@@ -49,7 +49,7 @@ export function reducer(state: GameState, action: Action): GameState {
 
     case 'CONFIRM_DICE': {
       if (state.phase !== 'rolling' || state.dice.length !== 5) return state
-      const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee !== undefined
+      const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee === 50
       const isBonusYahtzee = scoreYahtzee(state.dice) === 50 && yahtzeeAlreadyScored
       return { ...state, phase: 'selecting', selectedCategory: null, isBonusYahtzee }
     }
