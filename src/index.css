@@ -5,8 +5,18 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
 }
 
 h1, h2, h3 {
@@ -68,7 +78,7 @@ p {
 
 /* ─── App shell ─────────────────────────────────────────────── */
 #app {
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   padding-top: env(safe-area-inset-top);
@@ -161,6 +171,7 @@ input[type='number']:focus {
   align-items: center;
   padding: 56px 16px 40px;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
