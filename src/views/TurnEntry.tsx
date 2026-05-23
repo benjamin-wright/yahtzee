@@ -27,6 +27,26 @@ const CATEGORY_LABELS: Record<Category, string> = {
   chance: 'Chance',
 }
 
+// [cx, cy] positions for each die face in a 60×60 viewBox
+const DIE_DOTS: Record<Die, [number, number][]> = {
+  1: [[30, 30]],
+  2: [[18, 42], [42, 18]],
+  3: [[18, 42], [30, 30], [42, 18]],
+  4: [[18, 18], [42, 18], [18, 42], [42, 42]],
+  5: [[18, 18], [42, 18], [30, 30], [18, 42], [42, 42]],
+  6: [[18, 18], [42, 18], [18, 30], [42, 30], [18, 42], [42, 42]],
+}
+
+function DiceFace({ value }: { value: Die }) {
+  return (
+    <svg viewBox="0 0 60 60" className="die-face" aria-hidden="true">
+      {DIE_DOTS[value].map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r={7} fill="currentColor" />
+      ))}
+    </svg>
+  )
+}
+
 function DieButton({
   value,
   onClick,
@@ -38,7 +58,7 @@ function DieButton({
 }) {
   return (
     <button className="die-button" onClick={onClick} disabled={disabled} type="button" aria-label={`Die ${value}`}>
-      {value}
+      <DiceFace value={value} />
     </button>
   )
 }
@@ -49,35 +69,39 @@ function RollingView({ state, dispatch }: Props) {
 
   return (
     <>
-      <h2>{playerName}'s Roll</h2>
-      <p className="turn-subtitle">Tap dice below to build your hand ({state.dice.length}/5)</p>
+      <div className="turn-scroll-body">
+        <h2>{playerName}'s Roll</h2>
+        <p className="turn-subtitle">Tap dice below to build your hand ({state.dice.length}/5)</p>
 
-      <section className="dice-input-row" aria-label="Dice input values">
-        {DICE_VALUES.map(value => (
-          <DieButton
-            key={value}
-            value={value}
-            disabled={isInputDisabled}
-            onClick={() => dispatch({ type: 'ADD_DIE', value })}
-          />
-        ))}
-      </section>
+        <section className="dice-input-row" aria-label="Dice input values">
+          {DICE_VALUES.map(value => (
+            <DieButton
+              key={value}
+              value={value}
+              disabled={isInputDisabled}
+              onClick={() => dispatch({ type: 'ADD_DIE', value })}
+            />
+          ))}
+        </section>
 
-      <section className="dice-hand" aria-label="Current hand">
-        {state.dice.length === 0 ? (
-          <p className="turn-muted">No dice selected yet</p>
-        ) : (
-          <div className="dice-hand-row">
-            {state.dice.map((die, i) => (
-              <DieButton key={`${die}-${i}`} value={die} onClick={() => dispatch({ type: 'REMOVE_DIE', index: i })} />
-            ))}
-          </div>
-        )}
-      </section>
+        <section className="dice-hand" aria-label="Current hand">
+          {state.dice.length === 0 ? (
+            <p className="turn-muted">No dice selected yet</p>
+          ) : (
+            <div className="dice-hand-row">
+              {state.dice.map((die, i) => (
+                <DieButton key={`${die}-${i}`} value={die} onClick={() => dispatch({ type: 'REMOVE_DIE', index: i })} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
-      <button className="btn-primary turn-primary-action" disabled={state.dice.length !== 5} onClick={() => dispatch({ type: 'CONFIRM_DICE' })}>
-        Continue
-      </button>
+      <div className="turn-footer">
+        <button className="btn-primary turn-primary-action" disabled={state.dice.length !== 5} onClick={() => dispatch({ type: 'CONFIRM_DICE' })}>
+          Continue
+        </button>
+      </div>
     </>
   )
 }
@@ -88,66 +112,70 @@ function SelectingView({ state, dispatch }: Props) {
 
   return (
     <>
-      <h2>{playerName}'s Category</h2>
-      <p className="turn-subtitle">Choose where to score this hand</p>
+      <div className="turn-scroll-body">
+        <h2>{playerName}'s Category</h2>
+        <p className="turn-subtitle">Choose where to score this hand</p>
 
-      <section className="dice-hand">
-        <div className="dice-hand-row">
-          {state.dice.map((die, i) => (
-            <DieButton key={`${die}-${i}`} value={die} disabled />
-          ))}
-        </div>
-      </section>
+        <section className="dice-hand">
+          <div className="dice-hand-row">
+            {state.dice.map((die, i) => (
+              <DieButton key={`${die}-${i}`} value={die} disabled />
+            ))}
+          </div>
+        </section>
 
-      <section className="category-section">
-        <h3>Upper Section</h3>
-        <div className="category-grid">
-          {UPPER_CATEGORIES.map(category => {
-            const lockedScore = currentScore[category]
-            const isLocked = lockedScore !== undefined
-            const isSelected = state.selectedCategory === category
-            return (
-              <button
-                key={category}
-                className={`category-card${isSelected ? ' is-selected' : ''}`}
-                type="button"
-                disabled={isLocked}
-                onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
-              >
-                <span>{CATEGORY_LABELS[category]}</span>
-                <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
-              </button>
-            )
-          })}
-        </div>
-      </section>
+        <section className="category-section">
+          <h3>Upper Section</h3>
+          <div className="category-grid">
+            {UPPER_CATEGORIES.map(category => {
+              const lockedScore = currentScore[category]
+              const isLocked = lockedScore !== undefined
+              const isSelected = state.selectedCategory === category
+              return (
+                <button
+                  key={category}
+                  className={`category-card${isSelected ? ' is-selected' : ''}`}
+                  type="button"
+                  disabled={isLocked}
+                  onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
+                >
+                  <span>{CATEGORY_LABELS[category]}</span>
+                  <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
+                </button>
+              )
+            })}
+          </div>
+        </section>
 
-      <section className="category-section">
-        <h3>Lower Section</h3>
-        <div className="category-grid">
-          {LOWER_CATEGORIES.map(category => {
-            const lockedScore = currentScore[category]
-            const isLocked = lockedScore !== undefined
-            const isSelected = state.selectedCategory === category
-            return (
-              <button
-                key={category}
-                className={`category-card${isSelected ? ' is-selected' : ''}`}
-                type="button"
-                disabled={isLocked}
-                onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
-              >
-                <span>{CATEGORY_LABELS[category]}</span>
-                <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
-              </button>
-            )
-          })}
-        </div>
-      </section>
+        <section className="category-section">
+          <h3>Lower Section</h3>
+          <div className="category-grid">
+            {LOWER_CATEGORIES.map(category => {
+              const lockedScore = currentScore[category]
+              const isLocked = lockedScore !== undefined
+              const isSelected = state.selectedCategory === category
+              return (
+                <button
+                  key={category}
+                  className={`category-card${isSelected ? ' is-selected' : ''}`}
+                  type="button"
+                  disabled={isLocked}
+                  onClick={() => dispatch({ type: 'SCORE_CATEGORY', category })}
+                >
+                  <span>{CATEGORY_LABELS[category]}</span>
+                  <strong>{isLocked ? lockedScore : scoreCategory(category, state.dice)}</strong>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      </div>
 
-      <button className="btn-primary turn-primary-action" disabled={state.selectedCategory === null} onClick={() => dispatch({ type: 'END_TURN' })}>
-        End turn
-      </button>
+      <div className="turn-footer">
+        <button className="btn-primary turn-primary-action" disabled={state.selectedCategory === null} onClick={() => dispatch({ type: 'END_TURN' })}>
+          End turn
+        </button>
+      </div>
     </>
   )
 }
