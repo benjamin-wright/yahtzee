@@ -13,6 +13,7 @@ const sampleState: GameState = {
   selectedCategory: null,
   yahtzeeBonuses: [0, 0],
   isBonusYahtzee: false,
+  rollMode: 'random',
 }
 
 describe('loadState', () => {
@@ -28,6 +29,13 @@ describe('loadState', () => {
   it('returns parsed state when valid JSON is stored', () => {
     localStorage.setItem('yahtzee-state', JSON.stringify(sampleState))
     expect(loadState()).toEqual(sampleState)
+  })
+
+  it('defaults rollMode to manual when stored state is missing it', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { rollMode: _rollMode, ...stateWithoutMode } = sampleState
+    localStorage.setItem('yahtzee-state', JSON.stringify(stateWithoutMode))
+    expect(loadState().rollMode).toBe('manual')
   })
 
   it('returns initialState when stored value is invalid JSON', () => {

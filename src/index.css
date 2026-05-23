@@ -71,6 +71,10 @@ p {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* ─── Buttons ───────────────────────────────────────────────── */
@@ -231,7 +235,7 @@ input[type='number']:focus {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  flex: 1;
   overflow: hidden;
 }
 
@@ -366,6 +370,59 @@ input[type='number']:focus {
   box-shadow: 0 0 0 2px var(--accent-bg);
 }
 
+.die-button--reroll {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+.die-button--reroll:not(:disabled):hover {
+  background: var(--accent-bg);
+}
+
+.mode-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.mode-toggle-btn {
+  border: none;
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.mode-toggle-btn.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mode-toggle-btn:not(:disabled):not(.is-active):hover {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.rolling-footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.rolling-footer-actions .btn-secondary {
+  flex: 0 0 auto;
+  min-width: 100px;
+}
+
+.rolling-footer-actions .btn-primary {
+  flex: 1;
+}
+
 .turn-primary-action {
   width: 100%;
 }
@@ -381,7 +438,7 @@ input[type='number']:focus {
 .view-scorecard {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  flex: 1;
 }
 
 .scorecard-nav {
