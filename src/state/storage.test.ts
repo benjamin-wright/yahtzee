@@ -7,6 +7,7 @@ import type { GameState } from './types'
 const sampleState: GameState = {
   phase: 'rolling',
   players: ['Alice', 'Bob'],
+  rounds: [],
   scores: [{}, {}],
   currentPlayer: 0,
   dice: [1, 3, 5],

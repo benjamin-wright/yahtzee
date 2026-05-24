@@ -5,6 +5,7 @@ import type { GameState } from './types'
 const twoPlayerScoring: GameState = {
   phase: 'rolling',
   players: ['Alice', 'Bob'],
+  rounds: [],
   scores: [{ yahtzee: 50 }, {}],
   currentPlayer: 0,
   dice: [4, 4, 4, 4, 4],

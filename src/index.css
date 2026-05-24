@@ -292,8 +292,22 @@ input[type='number']:focus {
   gap: 12px;
 }
 
+.turn-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .turn-header .mode-toggle {
   flex-shrink: 0;
+}
+
+.turn-exit {
+  font-size: 0.875rem;
+  padding: 0 12px;
+  height: 36px;
+  width: auto;
 }
 
 .turn-subtitle {
@@ -603,6 +617,119 @@ input[type='number']:focus {
 }
 
 .scorecard-footer .btn-primary {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+}
+
+/* ─── Overall scores view ───────────────────────────────────── */
+.view-overall-scores {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.overall-scores-nav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.overall-scores-nav h2 {
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.overall-scores-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.overall-scores-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.overall-scores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.overall-scores-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.overall-scores-table thead th.col-label {
+  text-align: left;
+  min-width: 110px;
+  z-index: 3;
+}
+
+.overall-scores-table thead th.col-player {
+  min-width: 80px;
+}
+
+.overall-scores-table tbody tr:nth-child(even) {
+  background: var(--surface-raised);
+}
+
+.overall-scores-table .row-label {
+  padding: 9px 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.overall-scores-table .score-cell {
+  padding: 9px 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
+}
+
+.overall-scores-table .winner-cell {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.overall-scores-table .totals-row td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  color: var(--text-strong);
+}
+
+.overall-scores-table .grand-totals-row td {
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.overall-scores-footer {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.overall-scores-footer .btn-primary {
   width: 100%;
   padding: 14px;
   font-size: 1rem;
