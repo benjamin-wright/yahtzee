@@ -40,15 +40,13 @@ export default function Scorecard({ state, dispatch }: Props) {
   const isGameOver = phase === 'gameover'
 
   function handleExit() {
+    const shouldExit = window.confirm('Exit this game and reset all scores?')
+    if (!shouldExit) return
     dispatch({ type: 'RESET_GAME' })
   }
 
   function handleNextTurn() {
-    if (isGameOver) {
-      dispatch({ type: 'RESET_GAME' })
-    } else {
-      dispatch({ type: 'NEXT_TURN' })
-    }
+    dispatch({ type: 'NEXT_TURN' })
   }
 
   return (
@@ -131,8 +129,8 @@ export default function Scorecard({ state, dispatch }: Props) {
       </div>
 
       <div className="scorecard-footer">
-        <button className="btn-primary" onClick={handleNextTurn}>
-          {isGameOver ? 'New Game' : 'Next Turn'}
+        <button className="btn-primary" onClick={handleNextTurn} disabled={isGameOver}>
+          Next Turn
         </button>
       </div>
     </div>
