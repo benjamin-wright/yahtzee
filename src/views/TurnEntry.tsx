@@ -136,7 +136,7 @@ function CategorySections({
                   onClick={onSelect && !isLocked ? () => onSelect(category) : undefined}
                 >
                   <span>{CATEGORY_LABELS[category]}</span>
-                  <strong>{isLocked ? lockedScore : scoreCategory(category, dice)}</strong>
+                  <strong>{isLocked ? lockedScore : (onSelect ? scoreCategory(category, dice) : '')}</strong>
                 </button>
               )
             })}
@@ -170,6 +170,12 @@ function RollingView({ state, dispatch }: Props) {
   const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
   const currentScore = state.scores[state.currentPlayer] ?? {}
+
+  function handleExit() {
+    const shouldExit = window.confirm('Cancel this round and lose its progress?')
+    if (!shouldExit) return
+    dispatch({ type: 'CANCEL_ROUND' })
+  }
 
   function handleModeChange(newMode: RollMode) {
     if (newMode === mode) return
@@ -264,22 +270,33 @@ function RollingView({ state, dispatch }: Props) {
         <div className="turn-header">
           <h2>{playerName}'s Roll</h2>
 
-          <div className="mode-toggle" role="group" aria-label="Roll mode">
+          <div className="turn-header-actions">
+            <div className="mode-toggle" role="group" aria-label="Roll mode">
+              <button
+                type="button"
+                className={`mode-toggle-btn${mode === 'manual' ? ' is-active' : ''}`}
+                onClick={() => handleModeChange('manual')}
+                disabled={isAnimating}
+              >
+                Manual
+              </button>
+              <button
+                type="button"
+                className={`mode-toggle-btn${mode === 'random' ? ' is-active' : ''}`}
+                onClick={() => handleModeChange('random')}
+                disabled={isAnimating}
+              >
+                🎲 Random
+              </button>
+            </div>
             <button
               type="button"
-              className={`mode-toggle-btn${mode === 'manual' ? ' is-active' : ''}`}
-              onClick={() => handleModeChange('manual')}
+              className="btn-ghost turn-exit"
+              onClick={handleExit}
               disabled={isAnimating}
+              aria-label="Exit round"
             >
-              Manual
-            </button>
-            <button
-              type="button"
-              className={`mode-toggle-btn${mode === 'random' ? ' is-active' : ''}`}
-              onClick={() => handleModeChange('random')}
-              disabled={isAnimating}
-            >
-              🎲 Random
+              Exit
             </button>
           </div>
         </div>
@@ -376,10 +393,26 @@ function SelectingView({ state, dispatch }: Props) {
   const playerName = state.players[state.currentPlayer]
   const currentScore = state.scores[state.currentPlayer] ?? {}
 
+  function handleExit() {
+    const shouldExit = window.confirm('Cancel this round and lose its progress?')
+    if (!shouldExit) return
+    dispatch({ type: 'CANCEL_ROUND' })
+  }
+
   return (
     <>
       <div className="turn-scroll-body">
-        <h2>{playerName}'s Category</h2>
+        <div className="turn-header">
+          <h2>{playerName}'s Category</h2>
+          <button
+            type="button"
+            className="btn-ghost turn-exit"
+            onClick={handleExit}
+            aria-label="Exit round"
+          >
+            Exit
+          </button>
+        </div>
         <p className="turn-subtitle">
           {state.isBonusYahtzee
             ? 'Bonus YAHTZEE! Pick any other category — +100 pts added automatically'

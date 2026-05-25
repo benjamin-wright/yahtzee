@@ -4,6 +4,7 @@ import { loadState, saveState } from './state/storage'
 import PlayerSetup from './views/PlayerSetup'
 import Scorecard from './views/Scorecard'
 import TurnEntry from './views/TurnEntry'
+import OverallScores from './views/OverallScores'
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadState)
@@ -20,8 +21,11 @@ function App() {
       {(state.phase === 'rolling' || state.phase === 'selecting') && (
         <TurnEntry state={state} dispatch={dispatch} />
       )}
-      {(state.phase === 'scoring' || state.phase === 'gameover') && (
+      {state.phase === 'scoring' && (
         <Scorecard state={state} dispatch={dispatch} />
+      )}
+      {state.phase === 'overall_scores' && (
+        <OverallScores state={state} dispatch={dispatch} />
       )}
     </div>
   )

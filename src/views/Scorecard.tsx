@@ -36,13 +36,12 @@ function allUpperScored(score: PlayerScore): boolean {
 }
 
 export default function Scorecard({ state, dispatch }: Props) {
-  const { players, scores, phase, yahtzeeBonuses } = state
-  const isGameOver = phase === 'gameover'
+  const { players, scores, yahtzeeBonuses } = state
 
   function handleExit() {
-    const shouldExit = window.confirm('Exit this game and reset all scores?')
+    const shouldExit = window.confirm('Cancel this round and lose its progress?')
     if (!shouldExit) return
-    dispatch({ type: 'RESET_GAME' })
+    dispatch({ type: 'CANCEL_ROUND' })
   }
 
   function handleNextTurn() {
@@ -53,7 +52,7 @@ export default function Scorecard({ state, dispatch }: Props) {
     <div className="view-scorecard">
       <nav className="scorecard-nav">
         <h2>Scorecard</h2>
-        <button className="btn-ghost scorecard-exit" onClick={handleExit} aria-label="Exit game">
+        <button className="btn-ghost scorecard-exit" onClick={handleExit} aria-label="Exit round">
           Exit
         </button>
       </nav>
@@ -129,7 +128,7 @@ export default function Scorecard({ state, dispatch }: Props) {
       </div>
 
       <div className="scorecard-footer">
-        <button className="btn-primary" onClick={handleNextTurn} disabled={isGameOver}>
+        <button className="btn-primary" onClick={handleNextTurn}>
           Next Turn
         </button>
       </div>
