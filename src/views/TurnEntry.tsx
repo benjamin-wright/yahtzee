@@ -136,7 +136,7 @@ function CategorySections({
                   onClick={onSelect && !isLocked ? () => onSelect(category) : undefined}
                 >
                   <span>{CATEGORY_LABELS[category]}</span>
-                  <strong>{isLocked ? lockedScore : scoreCategory(category, dice)}</strong>
+                  <strong>{isLocked ? lockedScore : (onSelect ? scoreCategory(category, dice) : '')}</strong>
                 </button>
               )
             })}
