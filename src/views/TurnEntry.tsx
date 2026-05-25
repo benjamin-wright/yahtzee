@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState, Action, RollMode } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
 import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
+import type { DiceRendererHandle } from './dice/DiceRenderer'
+
+const DiceRenderer = lazy(() => import('./dice/DiceRenderer'))
 
 interface Props {
   state: GameState
@@ -148,24 +151,46 @@ function CategorySections({
 }
 
 const MAX_ROLLS = 3
-const ANIMATION_BASE_MS = 1500
-const ANIMATION_JITTER_MS = 500
-const ANIMATION_TICK_MS = 150
 
 function RollingView({ state, dispatch }: Props) {
   const [rollCount, setRollCount] = useState(0)
+  // rerollIndices: set of die-mesh indices (0-4) selected for reroll.
+  // Die mesh 0-4 correspond to state.dice[0-4] (may be in any order).
   const [rerollIndices, setRerollIndices] = useState<Set<number>>(new Set())
-
-  // Random-mode animation state
-  const [animDisplay, setAnimDisplay] = useState<(Die | null)[]>([null, null, null, null, null])
   const [isAnimating, setIsAnimating] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Babylon.js 3D dice renderer
+  const diceRendererRef = useRef<DiceRendererHandle | null>(null)
+
+  // slotElsRef[s] is set to the invisible wrapper div for sorted slot s.
+  // DiceRenderer reads these to know where to animate settled dice.
+  const slotElsRef = useRef<(HTMLDivElement | null)[]>([null, null, null, null, null])
+
+  // Stable array of RefObject-like objects backed by slotElsRef
+  const slotRefs = useMemo(
+    () =>
+      Array.from(
+        { length: 5 },
+        (_, i) => ({
+          get current() {
+            return slotElsRef.current[i]
+          },
+        }) as React.RefObject<HTMLDivElement | null>,
+      ),
+    [],
+  )
+
+  // dieOriginalOrder[s] = mesh index (0-4) of the die at sorted slot s.
+  // Recomputed whenever state.dice changes (after each settled throw).
+  const dieOriginalOrder = useMemo(() => {
+    if (rollCount === 0 || state.dice.length < 5) return [0, 1, 2, 3, 4]
+    return [0, 1, 2, 3, 4].sort((a, b) => (state.dice[a] ?? 0) - (state.dice[b] ?? 0))
+  }, [state.dice, rollCount])
+
+  // Sync "?" face highlights on already-positioned dice whenever selection changes
   useEffect(() => {
-    return () => {
-      if (intervalRef.current !== null) clearInterval(intervalRef.current)
-    }
-  }, [])
+    diceRendererRef.current?.updateReroll(rerollIndices)
+  }, [rerollIndices])
 
   const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
@@ -181,69 +206,46 @@ function RollingView({ state, dispatch }: Props) {
     if (newMode === mode) return
     setRollCount(0)
     setRerollIndices(new Set())
-    setAnimDisplay([null, null, null, null, null])
+    setIsAnimating(false)
+    diceRendererRef.current?.reset()
     dispatch({ type: 'SET_ROLL_MODE', mode: newMode })
   }
 
   function handleRandomRoll() {
     const rng = seededRandom(Date.now())
-    const finals: Die[] = Array.from({ length: 5 }, (_, i) =>
-      rerollIndices.has(i) || rollCount === 0
+
+    // Compute final values in mesh order (0-4).
+    // On roll 0: all new. On subsequent rolls: keep non-reroll dice.
+    const finals: Die[] = Array.from({ length: 5 }, (_, meshIdx) =>
+      rerollIndices.has(meshIdx) || rollCount === 0
         ? randomDie(rng)
-        : (state.dice[i] ?? randomDie(rng))
+        : (state.dice[meshIdx] ?? randomDie(rng)),
     )
 
-    // Per-die settle time: base ± jitter
-    const rngJitter = seededRandom(Date.now() ^ 0xdeadbeef)
-    const settleTimes: number[] = finals.map((_, i) =>
-      rerollIndices.has(i) || rollCount === 0
-        ? ANIMATION_BASE_MS + (rngJitter() * 2 - 1) * ANIMATION_JITTER_MS
-        : 0
-    )
-    const maxSettle = Math.max(...settleTimes)
-
-    const settled = finals.map((_, i) => !(rerollIndices.has(i) || rollCount === 0))
-    const startTime = Date.now()
-
-    // Keep held dice visible as their current values during animation
-    setAnimDisplay(prev => prev.map((v, i) => settled[i] ? (state.dice[i] ?? v) : null))
     setIsAnimating(true)
     setRerollIndices(new Set())
 
-    const animRng = seededRandom(Date.now() ^ 0xc0ffee)
-
-    intervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime
-
-      setAnimDisplay(prev => prev.map((v, i) => {
-        if (settled[i]) return v
-        if (elapsed >= settleTimes[i]) {
-          settled[i] = true
-          return finals[i]
-        }
-        return randomDie(animRng)
-      }))
-
-      if (elapsed >= maxSettle + ANIMATION_TICK_MS) {
-        clearInterval(intervalRef.current!)
-        intervalRef.current = null
-        setAnimDisplay(finals)
-        setIsAnimating(false)
-        const newRollCount = rollCount + 1
-        setRollCount(newRollCount)
-        dispatch({ type: 'SET_DICE', dice: finals })
-        if (newRollCount >= MAX_ROLLS) {
-          dispatch({ type: 'CONFIRM_DICE' })
-        }
-      }
-    }, ANIMATION_TICK_MS)
+    // On the first roll all dice fly in; on rerolls only the rerolled ones exit+re-enter.
+    diceRendererRef.current?.startThrow(finals, rollCount === 0 ? new Set() : rerollIndices)
   }
 
-  function toggleReroll(index: number) {
+  // Called by DiceRenderer once all dice have slid into their row positions.
+  // originalOrderValues[i] = final value for die mesh i (NOT sorted).
+  function handleSettled(originalOrderValues: Die[]) {
+    const newRollCount = rollCount + 1
+    setRollCount(newRollCount)
+    setIsAnimating(false)
+    dispatch({ type: 'SET_DICE', dice: originalOrderValues })
+    if (newRollCount >= MAX_ROLLS) {
+      dispatch({ type: 'CONFIRM_DICE' })
+    }
+  }
+
+  function toggleReroll(meshIndex: number) {
     setRerollIndices(prev => {
       const next = new Set(prev)
-      if (next.has(index)) next.delete(index)
-      else next.add(index)
+      if (next.has(meshIndex)) next.delete(meshIndex)
+      else next.add(meshIndex)
       return next
     })
   }
@@ -259,13 +261,20 @@ function RollingView({ state, dispatch }: Props) {
 
   const isManualInputDisabled = state.dice.length >= 5
 
-  // For random mode: displayed dice (animating or settled)
-  const displayDice: (Die | null)[] = isAnimating || rollCount === 0
-    ? animDisplay
-    : state.dice.map((v, i) => rerollIndices.has(i) ? null : v)
-
   return (
     <>
+      {/* Full-screen 3D dice canvas — only mounted in random mode */}
+      {mode === 'random' && (
+        <Suspense fallback={null}>
+          <DiceRenderer
+            ref={diceRendererRef}
+            visible={true}
+            slotRefs={slotRefs}
+            onSettled={handleSettled}
+          />
+        </Suspense>
+      )}
+
       <div className="turn-scroll-body">
         <div className="turn-header">
           <h2>{playerName}'s Roll</h2>
@@ -332,21 +341,37 @@ function RollingView({ state, dispatch }: Props) {
           <>
             <p className="turn-subtitle">{randomSubtitle()}</p>
 
+            {/*
+              Invisible die slots: transparent HTML buttons whose only job is to
+              (a) provide screen-space positions for the 3D dice to snap to, and
+              (b) forward click events (through the pointer-events:none canvas)
+              to toggle reroll selection.  They are rendered in sorted-value order
+              so each slot position corresponds to the correct visual 3D die.
+            */}
             <section className="dice-hand" aria-label="Current hand">
-              <div className="dice-hand-row" style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
-                {displayDice.map((value, i) => (
-                  <DieButton
-                    key={i}
-                    value={value}
-                    reroll={rerollIndices.has(i)}
-                    disabled={isAnimating || rollCount === 0 || rollCount >= MAX_ROLLS}
-                    onClick={
-                      !isAnimating && rollCount > 0 && rollCount < MAX_ROLLS
-                        ? () => toggleReroll(i)
-                        : undefined
-                    }
-                  />
-                ))}
+              <div
+                className="dice-hand-row"
+                style={{ gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}
+              >
+                {Array.from({ length: 5 }, (_, s) => {
+                  const origIdx = dieOriginalOrder[s]
+                  const canClick = !isAnimating && rollCount > 0 && rollCount < MAX_ROLLS
+                  return (
+                    <div
+                      key={s}
+                      ref={el => { slotElsRef.current[s] = el }}
+                      style={{ opacity: 0, width: '100%', aspectRatio: '1 / 1', minHeight: '44px' }}
+                      aria-hidden="true"
+                    >
+                      <DieButton
+                        value={state.dice[origIdx] ?? null}
+                        reroll={rerollIndices.has(origIdx)}
+                        disabled={!canClick}
+                        onClick={canClick ? () => toggleReroll(origIdx) : undefined}
+                      />
+                    </div>
+                  )
+                })}
               </div>
             </section>
           </>

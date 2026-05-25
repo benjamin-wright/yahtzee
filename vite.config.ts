@@ -8,6 +8,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
+      workbox: {
+        // Babylon.js produces a large chunk; allow it to be precached
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+      },
       manifest: {
         name: 'Yahtzee',
         short_name: 'Yahtzee',
