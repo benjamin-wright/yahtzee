@@ -208,7 +208,6 @@ function RollingView({ state, dispatch }: Props) {
     // Keep held dice visible as their current values during animation
     setAnimDisplay(prev => prev.map((v, i) => settled[i] ? (state.dice[i] ?? v) : null))
     setIsAnimating(true)
-    setKeepIndices(new Set())
 
     const animRng = seededRandom(Date.now() ^ 0xc0ffee)
 
