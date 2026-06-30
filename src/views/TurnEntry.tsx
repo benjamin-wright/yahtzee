@@ -260,9 +260,9 @@ function RollingView({ state, dispatch }: Props) {
   const isManualInputDisabled = state.dice.length >= 5
 
   // For random mode: displayed dice (animating or settled)
-  const displayDice: (Die | null)[] = isAnimating || rollCount === 0
+  const displayDice = isAnimating || rollCount === 0
     ? animDisplay
-    : state.dice as (Die | null)[]
+    : state.dice
 
   return (
     <>
