@@ -407,14 +407,14 @@ input[type='number']:focus {
   box-shadow: 0 0 0 2px var(--accent-bg);
 }
 
-.die-button--reroll {
+.die-button--keep {
   border-color: var(--accent);
   background: var(--accent-bg);
   color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-bg);
 }
 
-.die-button--reroll:not(:disabled):hover {
+.die-button--keep:not(:disabled):hover {
   background: var(--accent-bg);
 }
 
