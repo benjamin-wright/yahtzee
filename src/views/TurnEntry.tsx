@@ -249,17 +249,17 @@ function RollingView({ state, dispatch }: Props) {
   const canRoll = rollCount === 0 || rollCount < MAX_ROLLS
   const canSelectCategory = rollCount > 0 && !isAnimating
   const hasSelectedCategory = state.selectedCategory !== null
-  const primaryActionLabel = hasSelectedCategory
-    ? 'End turn'
-    : rollCount === 0
-      ? 'Roll'
-      : canRoll
-        ? `Reroll (${5 - keepIndices.size})`
-        : 'Select score'
   const isPrimaryActionDisabled = isAnimating || (!hasSelectedCategory && !canRoll)
   const handlePrimaryAction = hasSelectedCategory
     ? () => dispatch({ type: 'END_TURN' })
     : handleRandomRoll
+
+  function primaryActionLabel(): string {
+    if (hasSelectedCategory) return 'End turn'
+    if (rollCount === 0) return 'Roll'
+    if (canRoll) return `Reroll (${5 - keepIndices.size})`
+    return 'Select score'
+  }
 
   function randomSubtitle(): string {
     if (isAnimating) return 'Rolling…'
@@ -395,7 +395,7 @@ function RollingView({ state, dispatch }: Props) {
               onClick={handlePrimaryAction}
               type="button"
             >
-              {primaryActionLabel}
+              {primaryActionLabel()}
             </button>
           </div>
         )}
