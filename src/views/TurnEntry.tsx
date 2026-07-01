@@ -94,17 +94,20 @@ function buildEntryKeyframe(
 
   const durationMs = ENTRY_BASE_DURATION_MS + (Math.random() * 2 - 1) * ENTRY_DURATION_JITTER_MS
 
+  // Work backwards from the final resting state (rotate 0deg = matches static grid die).
+  // totalAngle is an integer number of full rotations so startAngle also resolves to
+  // a multiple of 360° — visually identical to 0° — avoiding any jump on landing.
   const angularSign = Math.random() > 0.5 ? 1 : -1
   const angularJitter = 1 + (Math.random() * 2 - 1) * ANGULAR_VEL_JITTER
-  const totalAngle = angularSign * BASE_TOTAL_ANGLE_DEG * angularJitter
-  const startAngle = (Math.random() * 2 - 1) * 180
+  const rotations = Math.round(BASE_TOTAL_ANGLE_DEG / 360 * angularJitter)
+  const totalAngle = angularSign * rotations * 360
+  // Derived from final → air-end → start (all multiples of 360°, no CSS shortest-path reversal)
+  const startAngle = -totalAngle                               // 0 - totalAngle
+  const angleAirEnd = -(1 - AIR_PATH_FRAC) * totalAngle       // 0 - 20% of totalAngle
 
   // Point at 80% of path (reached at 66.67% of time)
   const cxAirEnd = cxOrigin + AIR_PATH_FRAC * (cxFinal - cxOrigin)
   const cyAirEnd = cyOrigin + AIR_PATH_FRAC * (cyFinal - cyOrigin)
-  const angleAirEnd = startAngle + AIR_PATH_FRAC * totalAngle
-  // End angle continues in the same direction — no reversal
-  const angleFinal = startAngle + totalAngle
 
   // CSS translate tracks top-left corner; rotation is around transform-origin (center)
   const tx0 = cxOrigin - dieW / 2
@@ -120,7 +123,7 @@ function buildEntryKeyframe(
     `@keyframes ${animName} {` +
     `0%{transform:translate(${tx0.toFixed(1)}px,${ty0.toFixed(1)}px) rotate(${startAngle.toFixed(1)}deg);animation-timing-function:linear}` +
     `${(AIR_TIME_FRAC * 100).toFixed(3)}%{transform:translate(${tx1.toFixed(1)}px,${ty1.toFixed(1)}px) rotate(${angleAirEnd.toFixed(1)}deg);animation-timing-function:ease-out}` +
-    `100%{transform:translate(${tx2.toFixed(1)}px,${ty2.toFixed(1)}px) rotate(${angleFinal.toFixed(1)}deg)}}`
+    `100%{transform:translate(${tx2.toFixed(1)}px,${ty2.toFixed(1)}px) rotate(0deg)}}`
 
   return { css, animName, durationMs }
 }
