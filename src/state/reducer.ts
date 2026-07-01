@@ -1,6 +1,7 @@
 import type { PlayerScore } from '../scoring/types'
 import { CATEGORIES } from '../scoring/types'
-import { scoreCategory, scoreYahtzee } from '../scoring/categories'
+import { scoreCategory } from '../scoring/categories'
+import { isBonusYahtzeeTurn } from './bonusYahtzee'
 import type { GameState, Action } from './types'
 
 export const initialState: GameState = {
@@ -22,11 +23,6 @@ function allCategoriesScored(score: PlayerScore): boolean {
 
 function isGameOver(scores: PlayerScore[]): boolean {
   return scores.every(allCategoriesScored)
-}
-
-function isBonusYahtzeeTurn(state: GameState): boolean {
-  const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee === 50
-  return scoreYahtzee(state.dice) === 50 && yahtzeeAlreadyScored
 }
 
 export function reducer(state: GameState, action: Action): GameState {
@@ -69,7 +65,12 @@ export function reducer(state: GameState, action: Action): GameState {
 
     case 'CONFIRM_DICE': {
       if (state.phase !== 'rolling' || state.dice.length !== 5) return state
-      return { ...state, phase: 'selecting', selectedCategory: null, isBonusYahtzee: isBonusYahtzeeTurn(state) }
+      return {
+        ...state,
+        phase: 'selecting',
+        selectedCategory: null,
+        isBonusYahtzee: isBonusYahtzeeTurn(state.dice, state.scores[state.currentPlayer]),
+      }
     }
 
     case 'SCORE_CATEGORY':
@@ -94,7 +95,7 @@ export function reducer(state: GameState, action: Action): GameState {
           [selectedCategory]: scoreCategory(selectedCategory, state.dice),
         }
       })
-      const newYahtzeeBonuses = isBonusYahtzeeTurn(state)
+      const newYahtzeeBonuses = isBonusYahtzeeTurn(state.dice, state.scores[state.currentPlayer])
         ? state.yahtzeeBonuses.map((b, i) => (i === currentPlayerIdx ? b + 1 : b))
         : state.yahtzeeBonuses
       if (isGameOver(newScores)) {

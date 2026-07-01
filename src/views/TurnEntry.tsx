@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState, Action, RollMode } from '../state/types'
-import { scoreCategory, scoreYahtzee } from '../scoring/categories'
+import { scoreCategory } from '../scoring/categories'
 import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
+import { isBonusYahtzeeTurn } from '../state/bonusYahtzee'
 
 interface Props {
   state: GameState
@@ -170,7 +171,7 @@ function RollingView({ state, dispatch }: Props) {
   const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
   const currentScore = state.scores[state.currentPlayer] ?? {}
-  const isBonusYahtzee = scoreYahtzee(state.dice) === 50 && currentScore.yahtzee === 50
+  const isBonusYahtzee = isBonusYahtzeeTurn(state.dice, currentScore)
 
   function handleExit() {
     const shouldExit = window.confirm('Cancel this round and lose its progress?')
