@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 const MIN_PLAYERS = 1
-const MAX_PLAYERS = 6
+const MAX_PLAYERS = 8
 
 interface Props {
   onStart: (players: string[]) => void

@@ -4,6 +4,7 @@ import type { GameState, Action, RollMode } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
 import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
+import { isBonusYahtzeeTurn } from '../state/bonusYahtzee'
 
 interface Props {
   state: GameState
@@ -102,6 +103,8 @@ function buildEntryKeyframe(
   const cxAirEnd = cxOrigin + AIR_PATH_FRAC * (cxFinal - cxOrigin)
   const cyAirEnd = cyOrigin + AIR_PATH_FRAC * (cyFinal - cyOrigin)
   const angleAirEnd = startAngle + AIR_PATH_FRAC * totalAngle
+  // End angle continues in the same direction — no reversal
+  const angleFinal = startAngle + totalAngle
 
   // CSS translate tracks top-left corner; rotation is around transform-origin (center)
   const tx0 = cxOrigin - dieW / 2
@@ -117,7 +120,7 @@ function buildEntryKeyframe(
     `@keyframes ${animName} {` +
     `0%{transform:translate(${tx0.toFixed(1)}px,${ty0.toFixed(1)}px) rotate(${startAngle.toFixed(1)}deg);animation-timing-function:linear}` +
     `${(AIR_TIME_FRAC * 100).toFixed(3)}%{transform:translate(${tx1.toFixed(1)}px,${ty1.toFixed(1)}px) rotate(${angleAirEnd.toFixed(1)}deg);animation-timing-function:ease-out}` +
-    `100%{transform:translate(${tx2.toFixed(1)}px,${ty2.toFixed(1)}px) rotate(0deg)}}`
+    `100%{transform:translate(${tx2.toFixed(1)}px,${ty2.toFixed(1)}px) rotate(${angleFinal.toFixed(1)}deg)}}`
 
   return { css, animName, durationMs }
 }
@@ -179,29 +182,29 @@ function DieButton({
   value,
   onClick,
   disabled,
-  reroll,
+  keep,
   hidden,
 }: {
   ref?: React.Ref<HTMLButtonElement>
   value: Die | null
   onClick?: () => void
   disabled?: boolean
-  reroll?: boolean
+  keep?: boolean
   hidden?: boolean
 }) {
   return (
     <button
       ref={ref}
-      className={`die-button${reroll ? ' die-button--reroll' : ''}${hidden ? ' die-button--hidden' : ''}`}
+      className={`die-button${keep ? ' die-button--keep' : ''}${hidden ? ' die-button--hidden' : ''}`}
       onClick={onClick}
       disabled={disabled}
       type="button"
       aria-label={
         value !== null
-          ? `Die ${value}${reroll ? ', selected for reroll' : ''}`
+          ? `Die ${value}${keep ? ', kept' : ''}`
           : 'Die not yet rolled'
       }
-      aria-pressed={reroll}
+      aria-pressed={keep}
     >
       {value !== null ? <DiceFace value={value} /> : <DiceFaceQuestion />}
     </button>
@@ -258,7 +261,7 @@ const MAX_ROLLS = 3
 
 function RollingView({ state, dispatch }: Props) {
   const [rollCount, setRollCount] = useState(0)
-  const [rerollIndices, setRerollIndices] = useState<Set<number>>(new Set())
+  const [keepIndices, setKeepIndices] = useState<Set<number>>(new Set())
 
   // Animation state
   const [animPhase, setAnimPhase] = useState<AnimPhase>('idle')
@@ -294,6 +297,7 @@ function RollingView({ state, dispatch }: Props) {
   const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
   const currentScore = state.scores[state.currentPlayer] ?? {}
+  const isBonusYahtzee = isBonusYahtzeeTurn(state.dice, currentScore)
 
   function handleExit() {
     const shouldExit = window.confirm('Cancel this round and lose its progress?')
@@ -304,7 +308,14 @@ function RollingView({ state, dispatch }: Props) {
   function handleModeChange(newMode: RollMode) {
     if (newMode === mode) return
     setRollCount(0)
-    setRerollIndices(new Set())
+    setKeepIndices(new Set())
+    if (animTimerRef.current !== null) {
+      clearTimeout(animTimerRef.current)
+      animTimerRef.current = null
+    }
+    setOverlayDice([])
+    setHiddenIndices(new Set())
+    setAnimPhase('idle')
     dispatch({ type: 'SET_ROLL_MODE', mode: newMode })
   }
 
@@ -315,10 +326,6 @@ function RollingView({ state, dispatch }: Props) {
     setAnimPhase('idle')
     dispatch({ type: 'SET_DICE', dice: finals })
     setRollCount(newRollCount)
-    setRerollIndices(new Set())
-    if (newRollCount >= MAX_ROLLS) {
-      dispatch({ type: 'CONFIRM_DICE' })
-    }
   }
 
   function startEntryAnimation(indices: number[], finals: Die[], newRollCount: number) {
@@ -389,9 +396,9 @@ function RollingView({ state, dispatch }: Props) {
   function handleRandomRoll() {
     const rng = seededRandom(Date.now())
     const finals: Die[] = Array.from({ length: 5 }, (_, i) =>
-      rerollIndices.has(i) || rollCount === 0
-        ? randomDie(rng)
-        : (state.dice[i] ?? randomDie(rng))
+      keepIndices.has(i) && rollCount > 0
+        ? (state.dice[i] ?? randomDie(rng))
+        : randomDie(rng)
     )
     const newRollCount = rollCount + 1
 
@@ -399,14 +406,14 @@ function RollingView({ state, dispatch }: Props) {
       // First roll: all 5 dice fly in from below
       startEntryAnimation([0, 1, 2, 3, 4], finals, newRollCount)
     } else {
-      // Reroll: selected dice fly off the top, then new values fly in
-      const exitIndices = Array.from(rerollIndices)
+      // Reroll: non-kept dice fly off the top, then new values fly in
+      const exitIndices = [0, 1, 2, 3, 4].filter(i => !keepIndices.has(i))
       startExitAnimation(exitIndices, finals, newRollCount)
     }
   }
 
-  function toggleReroll(index: number) {
-    setRerollIndices(prev => {
+  function toggleKeep(index: number) {
+    setKeepIndices(prev => {
       const next = new Set(prev)
       if (next.has(index)) next.delete(index)
       else next.add(index)
@@ -414,19 +421,31 @@ function RollingView({ state, dispatch }: Props) {
     })
   }
 
-  const canRoll = rollCount === 0 || (rollCount < MAX_ROLLS && rerollIndices.size > 0)
-  const canAccept = rollCount > 0
+  const canRoll = rollCount === 0 || rollCount < MAX_ROLLS
+  const canSelectCategory = rollCount > 0 && !isAnimating
+  const hasSelectedCategory = state.selectedCategory !== null
+  const isPrimaryActionDisabled = isAnimating || (!hasSelectedCategory && !canRoll)
+  const handlePrimaryAction = hasSelectedCategory
+    ? () => dispatch({ type: 'END_TURN' })
+    : handleRandomRoll
+
+  function primaryActionLabel(): string {
+    if (hasSelectedCategory) return 'End turn'
+    if (rollCount === 0) return 'Roll'
+    if (canRoll) return `Reroll (${5 - keepIndices.size})`
+    return 'Select score'
+  }
 
   function randomSubtitle(): string {
     if (isAnimating) return 'Rolling…'
     if (rollCount === 0) return 'Press Roll to begin'
-    return `Roll ${rollCount} of ${MAX_ROLLS} · Tap dice to reroll, or Accept to keep all`
+    if (hasSelectedCategory) return 'Score selected · Tap End turn to lock it in'
+    if (!canRoll) return 'No rerolls left · Choose a score to finish your turn'
+    return `Roll ${rollCount} of ${MAX_ROLLS} · Tap dice to keep, then Reroll`
   }
 
-  // Display values for the grid — hidden dice are invisible; values don't matter for them
-  const displayDice: (Die | null)[] = state.dice.length === 5
-    ? state.dice
-    : [null, null, null, null, null]
+  // Display values for the grid — hidden dice are invisible during animation
+  const displayDice: (Die | null)[] = Array.from({ length: 5 }, (_, i) => state.dice[i] ?? null)
 
   return (
     <>
@@ -522,12 +541,12 @@ function RollingView({ state, dispatch }: Props) {
                     key={i}
                     ref={el => { dieRefs.current[i] = el }}
                     value={value}
-                    reroll={rerollIndices.has(i)}
+                    keep={keepIndices.has(i)}
                     hidden={hiddenIndices.has(i)}
                     disabled={isAnimating || rollCount === 0 || rollCount >= MAX_ROLLS}
                     onClick={
                       !isAnimating && rollCount > 0 && rollCount < MAX_ROLLS
-                        ? () => toggleReroll(i)
+                        ? () => toggleKeep(i)
                         : undefined
                     }
                   />
@@ -537,7 +556,18 @@ function RollingView({ state, dispatch }: Props) {
           </>
         )}
 
-        <CategorySections dice={state.dice} scores={currentScore} />
+        {mode === 'random' && isBonusYahtzee && canSelectCategory && (
+          <div className="bonus-yahtzee-banner" role="status">
+            🎲 BONUS YAHTZEE! <strong>+100 pts</strong>
+          </div>
+        )}
+
+        <CategorySections
+          dice={state.dice}
+          scores={currentScore}
+          selectedCategory={state.selectedCategory}
+          onSelect={mode === 'random' && canSelectCategory ? category => dispatch({ type: 'SCORE_CATEGORY', category }) : undefined}
+        />
       </div>
 
       <div className="turn-footer">
@@ -552,20 +582,12 @@ function RollingView({ state, dispatch }: Props) {
         ) : (
           <div className="rolling-footer-actions">
             <button
-              className="btn-secondary"
-              disabled={isAnimating || !canAccept}
-              onClick={() => dispatch({ type: 'CONFIRM_DICE' })}
-              type="button"
-            >
-              Accept
-            </button>
-            <button
               className="btn-primary"
-              disabled={isAnimating || !canRoll}
-              onClick={handleRandomRoll}
+              disabled={isPrimaryActionDisabled}
+              onClick={handlePrimaryAction}
               type="button"
             >
-              {rollCount === 0 ? 'Roll' : `Reroll${rerollIndices.size > 0 ? ` (${rerollIndices.size})` : ''}`}
+              {primaryActionLabel()}
             </button>
           </div>
         )}
