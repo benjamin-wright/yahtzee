@@ -50,26 +50,41 @@ describe('CONFIRM_DICE', () => {
 })
 
 describe('END_TURN', () => {
-  it('does not increment bonus yahtzees when isBonusYahtzee is false', () => {
+  it('does not increment bonus yahtzees when the hand is not a bonus yahtzee', () => {
     const state: GameState = {
       ...twoPlayerScoring,
-      phase: 'selecting',
+      phase: 'rolling',
+      dice: [1, 2, 3, 4, 5],
       selectedCategory: 'chance',
-      isBonusYahtzee: false,
     }
     const result = reducer(state, { type: 'END_TURN' })
     expect(result.yahtzeeBonuses[0]).toBe(0)
   })
 
-  it('increments bonus yahtzees when isBonusYahtzee is true', () => {
+  it('increments bonus yahtzees when ending a bonus yahtzee turn from rolling', () => {
     const state: GameState = {
       ...twoPlayerScoring,
-      phase: 'selecting',
+      phase: 'rolling',
       selectedCategory: 'chance',
-      isBonusYahtzee: true,
     }
     const result = reducer(state, { type: 'END_TURN' })
     expect(result.yahtzeeBonuses[0]).toBe(1)
+  })
+})
+
+describe('SCORE_CATEGORY', () => {
+  it('allows selecting a category during rolling once dice are available', () => {
+    const result = reducer(twoPlayerScoring, { type: 'SCORE_CATEGORY', category: 'chance' })
+    expect(result.selectedCategory).toBe('chance')
+  })
+
+  it('deselects the current category when it is tapped again', () => {
+    const state: GameState = {
+      ...twoPlayerScoring,
+      selectedCategory: 'chance',
+    }
+    const result = reducer(state, { type: 'SCORE_CATEGORY', category: 'chance' })
+    expect(result.selectedCategory).toBeNull()
   })
 })
 

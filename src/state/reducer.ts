@@ -24,6 +24,11 @@ function isGameOver(scores: PlayerScore[]): boolean {
   return scores.every(allCategoriesScored)
 }
 
+function isBonusYahtzeeTurn(state: GameState): boolean {
+  const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee === 50
+  return scoreYahtzee(state.dice) === 50 && yahtzeeAlreadyScored
+}
+
 export function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'START_GAME':
@@ -60,22 +65,23 @@ export function reducer(state: GameState, action: Action): GameState {
       return { ...state, dice: [] }
 
     case 'SET_ROLL_MODE':
-      return { ...state, rollMode: action.mode, dice: [] }
+      return { ...state, rollMode: action.mode, dice: [], selectedCategory: null, isBonusYahtzee: false }
 
     case 'CONFIRM_DICE': {
       if (state.phase !== 'rolling' || state.dice.length !== 5) return state
-      const yahtzeeAlreadyScored = state.scores[state.currentPlayer]?.yahtzee === 50
-      const isBonusYahtzee = scoreYahtzee(state.dice) === 50 && yahtzeeAlreadyScored
-      return { ...state, phase: 'selecting', selectedCategory: null, isBonusYahtzee }
+      return { ...state, phase: 'selecting', selectedCategory: null, isBonusYahtzee: isBonusYahtzeeTurn(state) }
     }
 
     case 'SCORE_CATEGORY':
-      if (state.phase !== 'selecting') return state
+      if ((state.phase !== 'rolling' && state.phase !== 'selecting') || state.dice.length !== 5) return state
       if (state.scores[state.currentPlayer]?.[action.category] !== undefined) return state
-      return { ...state, selectedCategory: action.category }
+      return {
+        ...state,
+        selectedCategory: state.selectedCategory === action.category ? null : action.category,
+      }
 
     case 'END_TURN': {
-      if (state.phase !== 'selecting' || !state.selectedCategory) return state
+      if ((state.phase !== 'rolling' && state.phase !== 'selecting') || !state.selectedCategory || state.dice.length !== 5) return state
       const selectedCategory = state.selectedCategory
       const currentPlayerIdx = state.currentPlayer
       const newScores = state.scores.map((s, i) => {
@@ -85,7 +91,7 @@ export function reducer(state: GameState, action: Action): GameState {
           [selectedCategory]: scoreCategory(selectedCategory, state.dice),
         }
       })
-      const newYahtzeeBonuses = state.isBonusYahtzee
+      const newYahtzeeBonuses = isBonusYahtzeeTurn(state)
         ? state.yahtzeeBonuses.map((b, i) => (i === currentPlayerIdx ? b + 1 : b))
         : state.yahtzeeBonuses
       if (isGameOver(newScores)) {
