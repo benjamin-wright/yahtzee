@@ -248,6 +248,17 @@ function RollingView({ state, dispatch }: Props) {
   const canRoll = rollCount === 0 || rollCount < MAX_ROLLS
   const canSelectCategory = rollCount > 0 && !isAnimating
   const hasSelectedCategory = state.selectedCategory !== null
+  const primaryActionLabel = hasSelectedCategory
+    ? 'End turn'
+    : rollCount === 0
+      ? 'Roll'
+      : canRoll
+        ? `Reroll (${5 - keepIndices.size})`
+        : 'Select score'
+  const isPrimaryActionDisabled = isAnimating || (!hasSelectedCategory && !canRoll)
+  const handlePrimaryAction = hasSelectedCategory
+    ? () => dispatch({ type: 'END_TURN' })
+    : handleRandomRoll
 
   function randomSubtitle(): string {
     if (isAnimating) return 'Rolling…'
@@ -379,17 +390,11 @@ function RollingView({ state, dispatch }: Props) {
           <div className="rolling-footer-actions">
             <button
               className="btn-primary"
-              disabled={isAnimating || (!hasSelectedCategory && !canRoll)}
-              onClick={hasSelectedCategory ? () => dispatch({ type: 'END_TURN' }) : handleRandomRoll}
+              disabled={isPrimaryActionDisabled}
+              onClick={handlePrimaryAction}
               type="button"
             >
-              {hasSelectedCategory
-                ? 'End turn'
-                : rollCount === 0
-                  ? 'Roll'
-                  : canRoll
-                    ? `Reroll (${5 - keepIndices.size})`
-                    : 'Select score'}
+              {primaryActionLabel}
             </button>
           </div>
         )}

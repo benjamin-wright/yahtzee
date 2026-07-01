@@ -81,8 +81,11 @@ export function reducer(state: GameState, action: Action): GameState {
       }
 
     case 'END_TURN': {
-      if ((state.phase !== 'rolling' && state.phase !== 'selecting') || !state.selectedCategory || state.dice.length !== 5) return state
+      const isTurnActive = state.phase === 'rolling' || state.phase === 'selecting'
+      const hasFullHand = state.dice.length === 5
+      if (!isTurnActive || !hasFullHand) return state
       const selectedCategory = state.selectedCategory
+      if (selectedCategory === null) return state
       const currentPlayerIdx = state.currentPlayer
       const newScores = state.scores.map((s, i) => {
         if (i !== currentPlayerIdx) return s
