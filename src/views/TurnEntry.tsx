@@ -57,8 +57,10 @@ function randomDie(rng: () => number): Die {
 
 // ─── Animation constants ──────────────────────────────────────
 // Physics model: 80% of path through air (constant velocity),
-// 20% sliding on floor (decelerating). Time split: 2/3 in air, 1/3 on floor.
-const AIR_TIME_FRAC = 2 / 3
+// 20% sliding on floor (decelerating). Time split: 45% in air, 55% on floor.
+// Giving the air phase less time makes it visually fast, so the floor
+// deceleration is clearly distinct (air ≈2× overall speed vs floor ≈0.36×).
+const AIR_TIME_FRAC = 0.45
 const AIR_PATH_FRAC = 0.8
 const ENTRY_BASE_DURATION_MS = 1200
 const ENTRY_DURATION_JITTER_MS = 100      // ±0.1 s
