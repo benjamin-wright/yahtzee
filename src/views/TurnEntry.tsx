@@ -56,12 +56,11 @@ function randomDie(rng: () => number): Die {
 }
 
 // ─── Animation constants ──────────────────────────────────────
-// Physics model: 80% of path through air (constant velocity),
-// 20% sliding on floor (decelerating). Time split: 45% in air, 55% on floor.
-// Giving the air phase less time makes it visually fast, so the floor
-// deceleration is clearly distinct (air ≈2× overall speed vs floor ≈0.36×).
-const AIR_TIME_FRAC = 0.45
-const AIR_PATH_FRAC = 0.8
+// Physics model: 93% of path through air (constant velocity),
+// 7% sliding on floor (decelerating). Time split: 56% in air, 44% on floor.
+// Short floor slide emphasises the skid-to-stop; air phase is noticeably faster.
+const AIR_TIME_FRAC = 0.56
+const AIR_PATH_FRAC = 0.93
 const ENTRY_BASE_DURATION_MS = 1200
 const ENTRY_DURATION_JITTER_MS = 100      // ±0.1 s
 const LAUNCH_ANGLE_MAX_RAD = 5 * (Math.PI / 180)  // ±5°
@@ -105,9 +104,9 @@ function buildEntryKeyframe(
   const totalAngle = angularSign * rotations * 360
   // Derived from final → air-end → start (all multiples of 360°, no CSS shortest-path reversal)
   const startAngle = -totalAngle                               // 0 - totalAngle
-  const angleAirEnd = -(1 - AIR_PATH_FRAC) * totalAngle       // 0 - 20% of totalAngle
+  const angleAirEnd = -(1 - AIR_PATH_FRAC) * totalAngle       // 0 - 7% of totalAngle
 
-  // Point at 80% of path (reached at 66.67% of time)
+  // Point at 93% of path (reached when air phase completes)
   const cxAirEnd = cxOrigin + AIR_PATH_FRAC * (cxFinal - cxOrigin)
   const cyAirEnd = cyOrigin + AIR_PATH_FRAC * (cyFinal - cyOrigin)
 
