@@ -58,9 +58,12 @@ function randomDie(rng: () => number): Die {
 // ─── Animation constants ──────────────────────────────────────
 // Physics model: 93% of path through air (constant velocity),
 // 7% sliding on floor (decelerating). Time split: 56% in air, 44% on floor.
-// Short floor slide emphasises the skid-to-stop; air phase is noticeably faster.
+// Floor-slide easing: cubic-bezier(0.1,1,0.4,1) — initial slope ≈10 matches the
+// air-phase exit speed so there is no abrupt jump at landing, then decelerates
+// aggressively to a smooth stop.
 const AIR_TIME_FRAC = 0.56
 const AIR_PATH_FRAC = 0.93
+const FLOOR_SLIDE_EASING = 'cubic-bezier(0.1,1,0.4,1)'
 const ENTRY_BASE_DURATION_MS = 1200
 const ENTRY_DURATION_JITTER_MS = 100      // ±0.1 s
 const LAUNCH_ANGLE_MAX_RAD = 5 * (Math.PI / 180)  // ±5°
@@ -123,7 +126,7 @@ function buildEntryKeyframe(
   const css =
     `@keyframes ${animName} {` +
     `0%{transform:translate(${tx0.toFixed(1)}px,${ty0.toFixed(1)}px) rotate(${startAngle.toFixed(1)}deg);animation-timing-function:linear}` +
-    `${(AIR_TIME_FRAC * 100).toFixed(3)}%{transform:translate(${tx1.toFixed(1)}px,${ty1.toFixed(1)}px) rotate(${angleAirEnd.toFixed(1)}deg);animation-timing-function:ease-out}` +
+    `${(AIR_TIME_FRAC * 100).toFixed(3)}%{transform:translate(${tx1.toFixed(1)}px,${ty1.toFixed(1)}px) rotate(${angleAirEnd.toFixed(1)}deg);animation-timing-function:${FLOOR_SLIDE_EASING}}` +
     `100%{transform:translate(${tx2.toFixed(1)}px,${ty2.toFixed(1)}px) rotate(0deg)}}`
 
   return { css, animName, durationMs }
