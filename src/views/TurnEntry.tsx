@@ -4,6 +4,7 @@ import type { GameState, Action, RollMode } from '../state/types'
 import { scoreCategory } from '../scoring/categories'
 import type { Category, Die, PlayerScore } from '../scoring/types'
 import { UPPER_CATEGORIES, LOWER_CATEGORIES } from '../scoring/types'
+import { isBonusYahtzeeTurn } from '../state/bonusYahtzee'
 
 interface Props {
   state: GameState
@@ -170,6 +171,7 @@ function RollingView({ state, dispatch }: Props) {
   const mode = state.rollMode
   const playerName = state.players[state.currentPlayer]
   const currentScore = state.scores[state.currentPlayer] ?? {}
+  const isBonusYahtzee = isBonusYahtzeeTurn(state.dice, currentScore)
 
   function handleExit() {
     const shouldExit = window.confirm('Cancel this round and lose its progress?')
@@ -231,9 +233,6 @@ function RollingView({ state, dispatch }: Props) {
         const newRollCount = rollCount + 1
         setRollCount(newRollCount)
         dispatch({ type: 'SET_DICE', dice: finals })
-        if (newRollCount >= MAX_ROLLS) {
-          dispatch({ type: 'CONFIRM_DICE' })
-        }
       }
     }, ANIMATION_TICK_MS)
   }
@@ -248,11 +247,25 @@ function RollingView({ state, dispatch }: Props) {
   }
 
   const canRoll = rollCount === 0 || rollCount < MAX_ROLLS
-  const canAccept = rollCount > 0
+  const canSelectCategory = rollCount > 0 && !isAnimating
+  const hasSelectedCategory = state.selectedCategory !== null
+  const isPrimaryActionDisabled = isAnimating || (!hasSelectedCategory && !canRoll)
+  const handlePrimaryAction = hasSelectedCategory
+    ? () => dispatch({ type: 'END_TURN' })
+    : handleRandomRoll
+
+  function primaryActionLabel(): string {
+    if (hasSelectedCategory) return 'End turn'
+    if (rollCount === 0) return 'Roll'
+    if (canRoll) return `Reroll (${5 - keepIndices.size})`
+    return 'Select score'
+  }
 
   function randomSubtitle(): string {
     if (isAnimating) return 'Rolling…'
     if (rollCount === 0) return 'Press Roll to begin'
+    if (hasSelectedCategory) return 'Score selected · Tap End turn to lock it in'
+    if (!canRoll) return 'No rerolls left · Choose a score to finish your turn'
     return `Roll ${rollCount} of ${MAX_ROLLS} · Tap dice to keep, then Reroll`
   }
 
@@ -351,7 +364,18 @@ function RollingView({ state, dispatch }: Props) {
           </>
         )}
 
-        <CategorySections dice={state.dice} scores={currentScore} />
+        {mode === 'random' && isBonusYahtzee && canSelectCategory && (
+          <div className="bonus-yahtzee-banner" role="status">
+            🎲 BONUS YAHTZEE! <strong>+100 pts</strong>
+          </div>
+        )}
+
+        <CategorySections
+          dice={state.dice}
+          scores={currentScore}
+          selectedCategory={state.selectedCategory}
+          onSelect={mode === 'random' && canSelectCategory ? category => dispatch({ type: 'SCORE_CATEGORY', category }) : undefined}
+        />
       </div>
 
       <div className="turn-footer">
@@ -366,20 +390,12 @@ function RollingView({ state, dispatch }: Props) {
         ) : (
           <div className="rolling-footer-actions">
             <button
-              className="btn-secondary"
-              disabled={isAnimating || !canAccept}
-              onClick={() => dispatch({ type: 'CONFIRM_DICE' })}
-              type="button"
-            >
-              Accept
-            </button>
-            <button
               className="btn-primary"
-              disabled={isAnimating || !canRoll}
-              onClick={handleRandomRoll}
+              disabled={isPrimaryActionDisabled}
+              onClick={handlePrimaryAction}
               type="button"
             >
-              {rollCount === 0 ? 'Roll' : `Reroll (${5 - keepIndices.size})`}
+              {primaryActionLabel()}
             </button>
           </div>
         )}
