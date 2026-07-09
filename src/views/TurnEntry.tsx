@@ -433,6 +433,11 @@ function RollingView({ state, dispatch }: Props) {
     })
   }
 
+  function handleCategorySelect(category: Category) {
+    setKeepIndices(new Set())
+    dispatch({ type: 'SCORE_CATEGORY', category })
+  }
+
   const canRoll = rollCount === 0 || rollCount < MAX_ROLLS
   const canSelectCategory = rollCount > 0 && !isAnimating
   const isPrimaryActionDisabled = isAnimating || (!hasSelectedCategory && !canRoll)
@@ -577,7 +582,7 @@ function RollingView({ state, dispatch }: Props) {
           dice={state.dice}
           scores={currentScore}
           selectedCategory={state.selectedCategory}
-          onSelect={mode === 'random' && canSelectCategory ? category => { setKeepIndices(new Set()); dispatch({ type: 'SCORE_CATEGORY', category }) } : undefined}
+          onSelect={mode === 'random' && canSelectCategory ? handleCategorySelect : undefined}
         />
       </div>
 
