@@ -306,6 +306,8 @@ function RollingView({ state, dispatch }: Props) {
   const currentScore = state.scores[state.currentPlayer] ?? {}
   const isBonusYahtzee = isBonusYahtzeeTurn(state.dice, currentScore)
 
+  const hasSelectedCategory = state.selectedCategory !== null
+
   function handleExit() {
     const shouldExit = window.confirm('Cancel this round and lose its progress?')
     if (!shouldExit) return
@@ -333,6 +335,9 @@ function RollingView({ state, dispatch }: Props) {
     setAnimPhase('idle')
     dispatch({ type: 'SET_DICE', dice: finals })
     setRollCount(newRollCount)
+    if (newRollCount >= MAX_ROLLS) {
+      setKeepIndices(new Set())
+    }
   }
 
   function startEntryAnimation(indices: number[], finals: Die[], newRollCount: number) {
@@ -428,9 +433,13 @@ function RollingView({ state, dispatch }: Props) {
     })
   }
 
+  function handleCategorySelect(category: Category) {
+    setKeepIndices(new Set())
+    dispatch({ type: 'SCORE_CATEGORY', category })
+  }
+
   const canRoll = rollCount === 0 || rollCount < MAX_ROLLS
   const canSelectCategory = rollCount > 0 && !isAnimating
-  const hasSelectedCategory = state.selectedCategory !== null
   const isPrimaryActionDisabled = isAnimating || (!hasSelectedCategory && !canRoll)
   const handlePrimaryAction = hasSelectedCategory
     ? () => dispatch({ type: 'END_TURN' })
@@ -550,7 +559,7 @@ function RollingView({ state, dispatch }: Props) {
                     value={value}
                     keep={keepIndices.has(i)}
                     hidden={hiddenIndices.has(i)}
-                    disabled={isAnimating || rollCount === 0 || rollCount >= MAX_ROLLS}
+                    disabled={rollCount === 0}
                     onClick={
                       !isAnimating && rollCount > 0 && rollCount < MAX_ROLLS
                         ? () => toggleKeep(i)
@@ -573,7 +582,7 @@ function RollingView({ state, dispatch }: Props) {
           dice={state.dice}
           scores={currentScore}
           selectedCategory={state.selectedCategory}
-          onSelect={mode === 'random' && canSelectCategory ? category => dispatch({ type: 'SCORE_CATEGORY', category }) : undefined}
+          onSelect={mode === 'random' && canSelectCategory ? handleCategorySelect : undefined}
         />
       </div>
 
