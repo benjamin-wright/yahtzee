@@ -122,12 +122,14 @@ export function reducer(state: GameState, action: Action): GameState {
 
     case 'START_ROUND': {
       if (state.phase !== 'overall_scores') return state
+      const playerCount = state.players.length
+      const startingPlayer = Math.min(Math.max(action.startingPlayer, 0), playerCount - 1)
       return {
         ...state,
         phase: 'scoring',
         scores: state.players.map(() => ({})),
         yahtzeeBonuses: state.players.map(() => 0),
-        currentPlayer: -1,
+        currentPlayer: (startingPlayer - 1 + playerCount) % playerCount,
         dice: [],
         selectedCategory: null,
         isBonusYahtzee: false,

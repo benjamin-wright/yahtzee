@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Dispatch } from 'react'
 import type { GameState, Action } from '../state/types'
 import { grandTotal } from '../scoring/scorecard'
@@ -16,6 +17,7 @@ function roundWinners(scores: number[]): Set<number> {
 
 export default function OverallScores({ state, dispatch }: Props) {
   const { players, rounds } = state
+  const [startingPlayer, setStartingPlayer] = useState(0)
 
   function handleExit() {
     const shouldExit = window.confirm('Exit to player select? All round data will be lost.')
@@ -24,7 +26,7 @@ export default function OverallScores({ state, dispatch }: Props) {
   }
 
   function handleNewRound() {
-    dispatch({ type: 'START_ROUND' })
+    dispatch({ type: 'START_ROUND', startingPlayer })
   }
 
   const roundTotals = rounds.map(round =>
@@ -100,6 +102,21 @@ export default function OverallScores({ state, dispatch }: Props) {
       </div>
 
       <div className="overall-scores-footer">
+        {players.length > 1 && (
+          <label className="starting-player-picker">
+            Who goes first?
+            <select
+              value={Math.min(startingPlayer, players.length - 1)}
+              onChange={e => setStartingPlayer(Number(e.target.value))}
+            >
+              {players.map((name, i) => (
+                <option key={i} value={i}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <button className="btn-primary" onClick={handleNewRound}>
           New Round
         </button>
