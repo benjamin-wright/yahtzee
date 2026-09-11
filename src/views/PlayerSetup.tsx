@@ -9,7 +9,6 @@ interface Props {
 
 export default function PlayerSetup({ onStart }: Props) {
   const [players, setPlayers] = useState<string[]>([''])
-  const [firstPlayer, setFirstPlayer] = useState(0)
 
   function updateName(index: number, name: string) {
     setPlayers(prev => prev.map((p, i) => (i === index ? name : p)))
@@ -27,19 +26,11 @@ export default function PlayerSetup({ onStart }: Props) {
     e.preventDefault()
     const names = players.map(p => p.trim()).filter(Boolean)
     if (names.length >= MIN_PLAYERS) {
-      const startIndex = effectiveFirstPlayer(names.length)
-      const ordered = [...names.slice(startIndex), ...names.slice(0, startIndex)]
-      onStart(ordered)
+      onStart(names)
     }
   }
 
-  function effectiveFirstPlayer(count: number) {
-    if (count === 0) return 0
-    return Math.min(firstPlayer, count - 1)
-  }
-
-  const names = players.map(p => p.trim()).filter(Boolean)
-  const filledNames = names.length
+  const filledNames = players.filter(p => p.trim()).length
   const canStart = filledNames >= MIN_PLAYERS
   const canAdd = players.length < MAX_PLAYERS
   const canRemove = players.length > MIN_PLAYERS
@@ -80,22 +71,6 @@ export default function PlayerSetup({ onStart }: Props) {
             </button>
           )}
         </fieldset>
-
-        {names.length > 1 && (
-          <fieldset>
-            <legend>Who goes first?</legend>
-            <select
-              value={effectiveFirstPlayer(names.length)}
-              onChange={e => setFirstPlayer(Number(e.target.value))}
-            >
-              {names.map((name, i) => (
-                <option key={i} value={i}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </fieldset>
-        )}
 
         <button type="submit" className="btn-primary" disabled={!canStart}>
           Start game

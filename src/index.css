@@ -146,8 +146,7 @@ button:disabled {
 
 /* ─── Inputs ────────────────────────────────────────────────── */
 input[type='text'],
-input[type='number'],
-select {
+input[type='number'] {
   font-family: var(--sans);
   font-size: 1rem;
   padding: 9px 12px;
@@ -159,8 +158,7 @@ select {
 }
 
 input[type='text']:focus,
-input[type='number']:focus,
-select:focus {
+input[type='number']:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
@@ -228,10 +226,6 @@ select:focus {
 .player-row input {
   flex: 1;
   min-width: 0;
-}
-
-.setup-form select {
-  width: 100%;
 }
 
 .setup-form .btn-secondary {
@@ -765,6 +759,34 @@ select:focus {
   background: var(--surface);
   border-top: 1px solid var(--border);
   box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.starting-player-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.starting-player-picker select {
+  font-family: var(--sans);
+  font-size: 1rem;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+.starting-player-picker select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 .overall-scores-footer .btn-primary {

@@ -32,6 +32,6 @@ export type Action =
   | { type: 'SCORE_CATEGORY'; category: Category }
   | { type: 'END_TURN' }
   | { type: 'NEXT_TURN' }
-  | { type: 'START_ROUND' }
+  | { type: 'START_ROUND'; startingPlayer: number }
   | { type: 'CANCEL_ROUND' }
   | { type: 'RESET_GAME' }
